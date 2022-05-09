@@ -1,0 +1,31 @@
+name: 'ci test manager'
+description: 'schedule ci tests for terraform-observe repos'
+inputs:
+  GITHUB_TOKEN:
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - id: unit-tests-scheduler
+      run: echo "Placeholder for scheduling more unit tests somdeay"
+      shell: bash
+    - id: burn-rate-tests-scheduler
+      run: echo "Placeholder for scheduling more burn-rate tests somdeay"
+      shell: bash
+    - id: validate-pr-title
+      uses: amannn/action-semantic-pull-request@v4
+      env:
+        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+      with:
+        validateSingleCommit: true
+        wip: true
+    - id: single-commit
+      # run: echo "Placeholder for scheduling single-commit test"
+      # shell: bash
+      uses: ./.github/workflows/single-commit
+    - id: pre-commit
+      # run: echo "Placeholder for scheduling pre-commit test"
+      # shell: bash
+      uses: ./.github/workflows/pre-commit
+    - id: conventional-commits
+      uses: ./.github/workflows/conventional-commits

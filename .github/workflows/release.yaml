@@ -1,0 +1,44 @@
+name: Release and push
+on:
+  workflow_call:
+    secrets:
+      token:
+        required: true
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    # Needed to interact with Github's OIDC token
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::723346149663:role/terraform-modules-role
+          aws-region: us-west-2
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Conventional Changelog Action
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v3
+        with:
+          github-token: ${{ github.token }}
+          skip-on-empty: 'false'
+          skip-version-file: 'true'
+          release-count: '1'
+      - name: Mirror in S3
+        run: make s3
+        env:
+          TAG: ${{ steps.changelog.outputs.tag }}
+      - name: Create Release
+        uses: actions/create-release@v1
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          release_name: ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
