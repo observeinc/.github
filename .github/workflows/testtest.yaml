@@ -1,0 +1,24 @@
+name: Terraform-Observe Test Scheduler
+
+on:
+  workflow_call:
+    inputs:
+      skip:
+        required: false
+        type: string
+        description: "example: {\"jobs\": [\"validate-pr-title\", \"single-commit\"]}"
+    outputs:
+      firstword:
+        description: "The first output string"
+        value: ${{ jobs.example_job.outputs.output1 }}
+
+jobs:
+  test:
+    name: Generate output
+    runs-on: ubuntu-latest
+    # Map the job outputs to step outputs
+    outputs:
+      output1: ${{ steps.step1.outputs.firstword }}
+    steps:
+      - id: step1
+        run: echo "::set-output name=firstword::hello"

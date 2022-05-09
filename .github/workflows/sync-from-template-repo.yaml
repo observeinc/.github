@@ -1,0 +1,150 @@
+---
+#
+# - Run this workflow to pull changes from the template repository.
+# 
+#   - Clone this repository. Check out a branch
+#   - Copy specific files from the template onto this clone
+#   - Push the branch to this repository
+#   - Create a pull request in this repository
+#
+name: Sync changes from template
+
+# TODO:
+# - Switch to gh. Check https://github.com/cli/cli/issues/297 for updates
+
+on:
+  workflow_call:
+    inputs:
+      BASE_BRANCH:
+        required: true
+        type: string
+        description: "the base branch of the repo being updated"
+      HEAD_BRANCH: 
+        required: true
+        type: string
+        description: "the name of the new branch to open a PR on"
+      GIT_AUTHOR_NAME:
+        required: true
+        type: string
+        description: "the github user to designate as author for the PR"
+      GIT_AUTHOR_EMAIL:
+        required: true
+        type: string
+        description: "the github email to associate with the PR"
+      REPO_TEMPLATE:
+        required: true
+        type: string
+        description: "the repo to treat as the template"
+      THIS_REPO:
+        required: true
+        type: string
+        description: "the repo that is being updated"
+
+env:
+  BASE_BRANCH: ${{ inputs.BASE_BRANCH }}
+  HEAD_BRANCH: ${{ inputs.HEAD_BRANCH }}
+  GIT_AUTHOR_NAME: ${{ inputs.GIT_AUTHOR_NAME }}
+  GIT_AUTHOR_EMAIL: ${{ inputs.GIT_AUTHOR_EMAIL }}
+  REPO_TEMPLATE: ${{ inputs.REPO_TEMPLATE }}
+  THIS_REPO: ${{ inputs.THIS_REPO }}
+
+jobs:
+  sync-from-template:
+    # Do not run on the template repository itself
+    if: github.repository != 'observeinc/terraform-observe-example'
+    name: Sync changes from observeinc/terraform-observe-example
+    runs-on: ubuntu-latest
+    continue-on-error: true
+
+    steps:
+
+      - name: set env vars
+        run: |
+          echo "BASE_BRANCH=${{ env.BASE_BRANCH }}" >> $GITHUB_ENV
+      # Clone the template repository
+      - name: Check out template repository
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ inputs.REPO_TEMPLATE }}
+          ssh-key: ${{ secrets.EXAMPLE_REPO_SSH_KEY }}
+          path: ${{ inputs.REPO_TEMPLATE }}
+
+      # Clone the target repository. Check out a branch
+      - name: Check out ${{ github.repository }}
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.repository }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ github.repository }}
+      - name: Create branch in ${{ inputs.THIS_REPO }}
+        run: |
+          git -C "${{ env.THIS_REPO }}" fetch origin "${{ env.HEAD_BRANCH }}" || true
+          git -C "${{ env.THIS_REPO }}" branch -a
+          git -C "${{ env.THIS_REPO }}" checkout -B "${{ env.HEAD_BRANCH }}" \
+            "remotes/origin/${{ env.HEAD_BRANCH }}" || \
+          git -C "${{ env.THIS_REPO }}" checkout -b "${{ env.HEAD_BRANCH }}"
+
+      # Copy files from the template onto the target clone
+      - name: Copy template contents
+        run: |
+          _files="$(
+            find ${{ env.REPO_TEMPLATE }} \
+            -path "*/.github/*" \
+            ! -path "*/.github/workflows/*" \
+            -type f \
+            -print &&
+            find ${{ env.REPO_TEMPLATE }} \
+            -name "Makefile" \
+            -type f \
+            -print &&
+            find ${{ env.REPO_TEMPLATE }} \
+            -name ".pre-commit-config.yaml" \
+            -type f \
+            -print &&
+            find ${{ env.REPO_TEMPLATE }} \
+            -name "LICENSE" \
+            -type f \
+            -print)"
+          for _file in ${_files}; do
+            _src="${_file}"
+            _dst="${{ env.THIS_REPO }}/${_file#${{ env.REPO_TEMPLATE }}/}"
+            _dst="${_dst%/*}/"
+            mkdir -p "${_dst}"
+            echo "::notice::INFO: Copy '${_src}' to '${_dst}'."
+            cp "${_src}" "${_dst}" || echo "::error::ERROR: Failed to copy '${_src}' to '${_dst}'."
+          done
+          git -C "${{ env.THIS_REPO }}" diff
+          HASCHANGES=false
+          git -C "${{ env.THIS_REPO }}" diff-index --quiet HEAD || HASCHANGES=true
+          echo "HASCHANGES=${HASCHANGES}" >> $GITHUB_ENV
+
+      # Commit changes, if there are any
+      - name: Commit changes, if any
+        if: ${{ env.HASCHANGES == 'true' }}
+        run: |
+          git -C ${{ env.THIS_REPO }} config user.name "${{ env.GIT_AUTHOR_NAME }}"
+          git -C ${{ env.THIS_REPO }} config \
+            user.email "${{ env.GIT_AUTHOR_EMAIL }}"
+          git -C ${{ env.THIS_REPO }} add .
+          git -C ${{ env.THIS_REPO }} commit \
+            -m "chore: Sync from template@${{ github.sha }}"
+
+      # Push the branch to the target repository
+      - name: Push topic branch
+        if: ${{ env.HASCHANGES == 'true' }}
+        run: git -C ${{ env.THIS_REPO }} push -u origin "${{ env.HEAD_BRANCH }}"
+
+      # Create a pull request in the target repository
+      - name: Create pull request
+        if: ${{ env.HASCHANGES == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.actor }}
+        run: |
+          pushd ${{ env.THIS_REPO }}
+          hub pull-request \
+            -b "${{ env.BASE_BRANCH }}" \
+            -h "${{ env.HEAD_BRANCH }}" \
+            --no-edit \
+            -m "Pull updates from ${{ env.REPO_TEMPLATE }}"
+          popd
