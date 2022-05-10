@@ -1,7 +1,8 @@
 name: 'ci test manager'
 description: 'schedule ci tests for terraform-observe repos'
 inputs:
-  skip_tests:
+  skip:
+    description: "{\"steps\": [\"validate-pr-title\", \"single-commit\"]}"
     required: false
 runs:
   using: "composite"
@@ -9,11 +10,11 @@ runs:
     - id: unit-tests-scheduler
       run: echo "Placeholder for scheduling more unit tests somdeay"
       shell: bash
-      if: "!contains(inputs.skip_tests, 'unit-tests-scheduler')"
+      if: "!contains(fromJSON(inputs.skip).steps, 'unit-tests-scheduler')"
     - id: burn-rate-tests-scheduler
       run: echo "Placeholder for scheduling more burn-rate tests somdeay"
       shell: bash
-      if: "!contains(inputs.skip_tests, 'burn-rate-tests-scheduler')"
+      if: "!contains(fromJSON(inputs.skip).steps, 'burn-rate-tests-scheduler')"
     - id: validate-pr-title
       uses: amannn/action-semantic-pull-request@v4
       env:
@@ -21,17 +22,17 @@ runs:
       with:
         validateSingleCommit: true
         wip: true
-      if: "!contains(inputs.skip_tests, 'validate-pr-title')"
+      if: "!contains(fromJSON(inputs.skip).steps, 'validate-pr-title')"
     - id: single-commit
       # run: echo "Placeholder for scheduling single-commit test"
       # shell: bash
       uses: ./.github/workflows/single-commit
-      if: "!contains(inputs.skip_tests, 'single-commit')"
+      if: "!contains(fromJSON(inputs.skip).steps, 'single-commit')"
     - id: pre-commit
       # run: echo "Placeholder for scheduling pre-commit test"
       # shell: bash
       uses: ./.github/workflows/pre-commit
-      if: "!contains(inputs.skip_tests, 'pre-commit')"
+      if: "!contains(fromJSON(inputs.skip).steps, 'pre-commit')"
     - id: conventional-commits
       uses: ./.github/workflows/conventional-commits
-      if: "!contains(inputs.skip_tests, 'conventional-commits')"
+      if: "!contains(fromJSON(inputs.skip).steps, 'conventional-commits')"
