@@ -1,9 +1,6 @@
 name: Release and push
 on:
   workflow_call:
-    secrets:
-      token:
-        required: true
 
 jobs:
   bump:
