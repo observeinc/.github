@@ -1,31 +1,37 @@
 name: 'ci test manager'
 description: 'schedule ci tests for terraform-observe repos'
 inputs:
-  GITHUB_TOKEN:
-    required: true
+  skip_tests:
+    required: false
 runs:
   using: "composite"
   steps:
     - id: unit-tests-scheduler
       run: echo "Placeholder for scheduling more unit tests somdeay"
       shell: bash
+      if: "!contains(inputs.skip_tests, 'unit-tests-scheduler')"
     - id: burn-rate-tests-scheduler
       run: echo "Placeholder for scheduling more burn-rate tests somdeay"
       shell: bash
+      if: "!contains(inputs.skip_tests, 'burn-rate-tests-scheduler')"
     - id: validate-pr-title
       uses: amannn/action-semantic-pull-request@v4
       env:
-        GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         validateSingleCommit: true
         wip: true
+      if: "!contains(inputs.skip_tests, 'validate-pr-title')"
     - id: single-commit
       # run: echo "Placeholder for scheduling single-commit test"
       # shell: bash
       uses: ./.github/workflows/single-commit
+      if: "!contains(inputs.skip_tests, 'single-commit')"
     - id: pre-commit
       # run: echo "Placeholder for scheduling pre-commit test"
       # shell: bash
       uses: ./.github/workflows/pre-commit
+      if: "!contains(inputs.skip_tests, 'pre-commit')"
     - id: conventional-commits
       uses: ./.github/workflows/conventional-commits
+      if: "!contains(inputs.skip_tests, 'conventional-commits')"
