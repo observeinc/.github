@@ -1,8 +1,11 @@
 name: 'ci test manager'
 description: 'schedule ci tests for terraform-observe repos'
 inputs:
+  token:
+    description: "Github Token"
+    required: true
   skip:
-    description: "{\"steps\": [\"validate-pr-title\", \"single-commit\"]}"
+    description: "example: {\"steps\": [\"validate-pr-title\", \"single-commit\"]}"
     required: false
 runs:
   using: "composite"
@@ -18,7 +21,7 @@ runs:
     - id: validate-pr-title
       uses: amannn/action-semantic-pull-request@v4
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.token }}
       with:
         validateSingleCommit: true
         wip: true
