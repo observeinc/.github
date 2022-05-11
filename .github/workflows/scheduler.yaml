@@ -39,7 +39,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Run CI Tests Checks
-        # uses: observeinc/terraform-observe-ci-tests@slobsv/optional-tests
         uses: observeinc/terraform-observe-ci-tests/.github/actions/ci-tests@main
         with:
           skip: ${{ inputs.skip }}

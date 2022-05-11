@@ -1,6 +1,13 @@
 name: Publish prerelease
 on:
   workflow_call:
+    inputs:
+      aws-role-to-assume:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
 
 jobs:
   publish:
@@ -12,8 +19,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::723346149663:role/terraform-modules-role
-          aws-region: us-west-2
+          role-to-assume: ${{ inputs.aws-role-to-assume }}
+          aws-region: ${{ inputs.aws-region }}
       - name: Checkout code
         uses: actions/checkout@v2
         with:

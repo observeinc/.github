@@ -1,6 +1,13 @@
 name: Release and push
 on:
   workflow_call:
+    inputs:
+      aws-role-to-assume:
+        required: true
+        type: string
+      aws-region:
+        required: true
+        type: string
 
 jobs:
   bump:
@@ -14,15 +21,15 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: arn:aws:iam::723346149663:role/terraform-modules-role
-          aws-region: us-west-2
+          role-to-assume: ${{ inputs.aws-role-to-assume }}
+          aws-region: ${{ inputs.aws-region }}
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Conventional Changelog Action
         id: changelog
         uses: TriPSs/conventional-changelog-action@v3
         with:
-          github-token: ${{ github.token }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           skip-on-empty: 'false'
           skip-version-file: 'true'
           release-count: '1'
@@ -34,7 +41,7 @@ jobs:
         uses: actions/create-release@v1
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.changelog.outputs.tag }}
           release_name: ${{ steps.changelog.outputs.tag }}
