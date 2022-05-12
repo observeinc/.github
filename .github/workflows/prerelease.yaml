@@ -1,13 +1,6 @@
 name: Publish prerelease
 on:
   workflow_call:
-    inputs:
-      aws-role-to-assume:
-        required: true
-        type: string
-      aws-region:
-        required: true
-        type: string
 
 jobs:
   publish:
@@ -19,11 +12,33 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: ${{ inputs.aws-role-to-assume }}
-          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
+          aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - name: Checkout code
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
       - name: Mirror in S3
         run: make s3
+      - name: Prepare Slack notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_SLACK_URL }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+        run: |
+          echo version=$(git describe --tags --always | sed 's/^v//' ) >> $GITHUB_ENV
+          echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
+      - name: Notify Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_SLACK_URL }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          payload: |
+            {
+              "namespace": "observeinc",
+              "name": "${{ env.name }}",
+              "system": "observe",
+              "version": "${{ env.version }}",
+              "repo": "${{ github.repository }}",
+              "commit_link": "https://github.com/${{ github.repository }}/tree/${{ github.sha }}"
+            }
