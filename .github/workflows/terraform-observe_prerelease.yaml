@@ -6,7 +6,7 @@ on:
         required: true
       TERRAFORM_MODULES_REGION:
         required: true
-      TERRAFORM_MODULES_SLACK_URL:
+      TERRAFORM_MODULES_PRERELEASE_SLACK_URL:
         required: false
 
 jobs:
@@ -29,14 +29,14 @@ jobs:
         run: make s3
       - name: Prepare Slack notification
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_SLACK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_PRERELEASE_SLACK_URL }}
         if: ${{ env.SLACK_WEBHOOK_URL != '' }}
         run: |
           echo version=$(git describe --tags --always | sed 's/^v//' ) >> $GITHUB_ENV
           echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
       - name: Notify Slack
         env:
-          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_SLACK_URL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_PRERELEASE_SLACK_URL }}
         if: ${{ env.SLACK_WEBHOOK_URL != '' }}
         uses: slackapi/slack-github-action@v1.19.0
         with:
