@@ -1,13 +1,13 @@
 name: Release and push
 on:
   workflow_call:
-    inputs:
-      aws-role-to-assume:
+    secrets:
+      TERRAFORM_MODULES_ROLE_ARN:
         required: true
-        type: string
-      aws-region:
+      TERRAFORM_MODULES_REGION:
         required: true
-        type: string
+      TERRAFORM_MODULES_RELEASE_SLACK_URL:
+        required: false
 
 jobs:
   bump:
@@ -21,8 +21,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          role-to-assume: ${{ inputs.aws-role-to-assume }}
-          aws-region: ${{ inputs.aws-region }}
+          role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
+          aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Conventional Changelog Action
@@ -46,3 +46,25 @@ jobs:
           tag_name: ${{ steps.changelog.outputs.tag }}
           release_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
+      - name: Prepare Slack notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_RELEASE_SLACK_URL }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+        run: |
+          echo version=$(echo "${{ steps.changelog.outputs.tag }}" | sed 's/^v//' ) >> $GITHUB_ENV
+          echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
+      - name: Notify Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_RELEASE_SLACK_URL }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          payload: |
+            {
+              "namespace": "observeinc",
+              "name": "${{ env.name }}",
+              "system": "observe",
+              "version": "${{ env.version }}",
+              "repo": "${{ github.repository }}",
+              "commit_link": "https://github.com/${{ github.repository }}/tree/${{ steps.changelog.outputs.tag }}"
+            }
