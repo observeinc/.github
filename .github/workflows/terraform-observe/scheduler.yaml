@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: observeinc/terraform-observe-ci-tests/.github/actions/single-commit@main
+      - uses: observeinc/.github/.github/actions/terraform-observe/single-commit@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -39,7 +39,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Run CI Tests Checks
-        uses: observeinc/terraform-observe-ci-tests/.github/actions/ci-tests@main
+        uses: observeinc/.github/.github/actions/terraform-observe/ci-tests@main
         with:
           skip: ${{ inputs.skip }}
           token: ${{ secrets.GITHUB_TOKEN }}

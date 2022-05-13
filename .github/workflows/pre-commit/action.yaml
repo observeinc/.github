@@ -1,4 +1,0 @@
-name: 'Pre-commit'
-description: 'Run Pre-commit tests'
-runs:
-  using: observeinc/terraform-observe-ci-tests/.github/workflows/pre-commit.yaml@slobsv/optional-tests
