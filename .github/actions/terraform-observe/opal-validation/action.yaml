@@ -1,0 +1,71 @@
+name: 'OPAL validation'
+description: 'run tf apply and destroy to validate opal'
+inputs:
+  observe-customer-id:
+    description: "customer id for test observe instance"
+    required: true
+  observe-domain:
+    description: "observeinc.com or observe-staging.com"
+    required: true
+  observe-user-handle: 
+    description: "observe user to create test assets"
+    required: true
+  observe-user-pswd:
+    description: "password for user to create test assets"
+    required: true
+    
+runs:
+  using: "composite"
+  steps:
+
+    - id: install-terraform
+      uses: hashicorp/setup-terraform@v1
+
+    - id: get-github-repo-name
+      run: echo "REPOSITORY_NAME=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_ENV
+      shell: bash
+
+    - id: checkout-commit
+      uses: actions/checkout@v2
+
+    - id: build-tf-files
+      run: |
+        cd ..  
+        cp ${{ github.action_path }}/main.tf.original ./
+        cp ${{ github.action_path }}/provider.tf ./
+        cp ${{ github.action_path }}/versions.tf ./
+        cp ${{ github.action_path }}/parse_tf_vars.sh ./
+        sed -i.bak "s/%%COMMMIT%%/${{ github.sha }}/g" ./main.tf.original
+        sed -i.bak "s/%%REPOSITORY%%/${{ env.REPOSITORY_NAME }}/g" ./main.tf.original
+        sed -i.bak "s/%%OBSERVE_CUSTOMER_ID%%/${{ inputs.observe-customer-id }}/g" ./provider.tf
+        sed -i.bak "s/%%OBSERVE_DOMAIN%%/${{ inputs.observe-domain }}/g" ./provider.tf
+        sed -i.bak "s/%%OBSERVE_USER_HANDLE%%/${{ inputs.observe-user-handle }}/g" ./provider.tf
+        cp ./provider.tf ./provider.tf.bak
+        perl -pe "s/%%OBSERVE_USER_PSWD%%/${{ inputs.observe-user-pswd }}/g" provider.tf.bak > provider.tf
+        bash parse_tf_vars.sh ${{ env.REPOSITORY_NAME }}/variables.tf
+      shell: bash
+
+    - id: terraform-init
+      run: |
+        cd ..
+        terraform init
+      shell: bash
+
+    - id: terraform-plan
+      run: |
+        cd ..
+        terraform plan -no-color
+      shell: bash
+
+    - id: terraform-apply
+      run: |
+        cd ..
+        terraform apply -auto-approve -input=false
+      shell: bash
+
+    - id: terraform-destroy
+      run: |
+        cd ..
+        terraform destroy -auto-approve -input=false
+      shell: bash
+      if: always()

@@ -31,6 +31,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  opal-validation:
+    if: "!contains(fromJSON(inputs.skip).jobs, 'opal-validation')"
+    name: OPAL Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate OPAL with TF apply/destroy
+        uses: observeinc/.github/.github/actions/terraform-observe/opal-validation@main
+        with:
+          observe-customer-id: ${{ secrets.TERRAFORM_MODULES_OBSV_TEST_INST_ID }}
+          observe-domain: ${{ secrets.TERRAFORM_MODULES_OBSV_TEST_INST_DOMAIN }}
+          observe-user-handle: ${{ secrets.OBSV_USER_HANDLE }}
+          observe-user-pswd: ${{ secrets.OBSV_USER_PSWD }}
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   ci-tests:
     if: "!contains(fromJSON(inputs.skip).jobs, 'ci-tests')"
     name: CI Tests Placeholder

@@ -1,0 +1,20 @@
+data "observe_workspace" "default" {
+  name = "Default"
+}
+
+module "test_defaults" {
+  source              = "./%%REPOSITORY%%"
+  workspace           = data.observe_workspace.default
+  observation_dataset = "test"
+  name_format         = "tf_test_defaults-%%COMMMIT%%/%s"
+}
+
+module "test_non_defaults" {
+  source              = "./%%REPOSITORY%%"
+  workspace           = data.observe_workspace.default
+  observation_dataset = "test"
+  name_format         = "tf_test_non_defaults-%%COMMMIT%%/%s"
+
+%%CUSTOM_VARIABLES%%
+
+}
