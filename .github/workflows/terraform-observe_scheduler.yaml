@@ -31,6 +31,42 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  get-test-directories:
+    if: "!contains(fromJSON(inputs.skip).jobs, 'terraform-tests')"
+    name: Get Test Directories For OPAL Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Build matrix
+        id: matrix
+        shell: bash
+        run: |
+          DIRS="$(find . -path "*.tests/*" ! -path "*.terraform*" -type d )"
+          [[ ${#DIRS} > 0 ]] && echo "::set-output name=directories::[\"${DIRS//$'\n'/\",\"}\"]" || echo "::set-output name=directories::[]"
+    outputs:
+      directories: ${{ steps.matrix.outputs.directories }}
+
+  terraform-test-apply:
+    needs: get-test-directories
+    if: ${{ needs.get-test-directories.outputs.directories != '[]' && needs.get-test-directories.outputs.directories != '' }}
+    name: OPAL Validation
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        directory: ${{ fromJson(needs.get-test-directories.outputs.directories) }}
+    steps:
+      - name: Validate OPAL with TF apply/destroy
+        uses: observeinc/.github/.github/actions/terraform-observe/terraform-test-apply@main
+        env: 
+          OBSERVE_CUSTOMER: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_CUSTOMER }}
+          OBSERVE_DOMAIN: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_DOMAIN }}
+          OBSERVE_USER_EMAIL: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_EMAIL }}
+          OBSERVE_USER_PASSWORD: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_PASSWORD }}
+          TEST_DIRECTORY: ${{ matrix.directory }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   ci-tests:
     if: "!contains(fromJSON(inputs.skip).jobs, 'ci-tests')"
     name: CI Tests Placeholder
