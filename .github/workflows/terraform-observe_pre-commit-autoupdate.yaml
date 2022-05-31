@@ -5,6 +5,7 @@ on:
 
 jobs:
   auto-update:
+    if: github.repository == 'observeinc/terraform-observe-example'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
