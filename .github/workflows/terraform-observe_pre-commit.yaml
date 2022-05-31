@@ -2,6 +2,11 @@ name: Pre-Commit
 
 on:
   workflow_call:
+    secrets:
+      TERRAFORM_MODULES_ROLE_ARN:
+        required: true
+      TERRAFORM_MODULES_REGION:
+        required: true
 
 jobs:
   # Min Terraform version(s)
@@ -25,6 +30,9 @@ jobs:
     name: Min TF validate
     needs: getDirectories
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         directory: ${{ fromJson(needs.getDirectories.outputs.directories) }}
@@ -33,6 +41,11 @@ jobs:
       # Validating submodules will fail without this (https://github.com/gruntwork-io/pre-commit/issues/42)
       OBSERVE_CUSTOMER: 0
     steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
+          aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - name: Checkout
         uses: actions/checkout@v2
       - name: Install Python
@@ -75,12 +88,20 @@ jobs:
     name: Max TF pre-commit
     runs-on: ubuntu-latest
     needs: getBaseVersion
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       fail-fast: false
       matrix:
         version:
           - ${{ needs.getBaseVersion.outputs.maxVersion }}
     steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
+          aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - name: Checkout
         uses: actions/checkout@v2
       - name: Install Python
