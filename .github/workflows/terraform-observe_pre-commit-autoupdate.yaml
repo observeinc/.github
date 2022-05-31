@@ -2,11 +2,24 @@ name: Pre-commit auto-update
 
 on:
   workflow_call:
+    secrets:
+      TERRAFORM_MODULES_ROLE_ARN:
+        required: true
+      TERRAFORM_MODULES_REGION:
+        required: true
 
 jobs:
   auto-update:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
+          aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - uses: actions/checkout@v2
       
       - uses: actions/setup-python@v2
