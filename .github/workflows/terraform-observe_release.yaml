@@ -8,6 +8,12 @@ on:
         required: true
       TERRAFORM_MODULES_RELEASE_SLACK_URL:
         required: false
+    inputs:
+      release-count:
+        required: false
+        type: string
+        description: Number of releases to preserve in changelog. Default is 0 (regenerates all).
+        default: '0'
 
 jobs:
   bump:
@@ -32,7 +38,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           skip-on-empty: 'false'
           skip-version-file: 'true'
-          release-count: '1'
+          release-count: ${{ inputs.release-count }}
       - name: Mirror in S3
         run: make s3
         env:
