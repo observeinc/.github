@@ -89,20 +89,18 @@ jobs:
         run: |
           _files="$(
             find ${{ env.REPO_TEMPLATE }} \
-            -path "*/.github/*" \
-            ! -path "*/.github/workflows/*" \
+            -path "./.github/*" \
+            ! -path "./.github/workflows/*" \
             -type f \
             -print &&
             find ${{ env.REPO_TEMPLATE }} \
-            -name "Makefile" \
+            -path "./scripts/*" \
             -type f \
             -print &&
-            find ${{ env.REPO_TEMPLATE }} \
-            -name ".pre-commit-config.yaml" \
-            -type f \
-            -print &&
-            find ${{ env.REPO_TEMPLATE }} \
-            -name "LICENSE" \
+            find ${{ env.REPO_TEMPLATE }} \( \
+            -name "Makefile" -o \
+            -name ".pre-commit-config.yaml" -o \
+            -name "LICENSE" \) \
             -type f \
             -print)"
           for _file in ${_files}; do
