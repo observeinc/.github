@@ -1,0 +1,19 @@
+name: 'Terraform Test Apply'
+description: 'run tf apply and destroy to validate opal'
+
+runs:
+  using: "composite"
+  steps:
+
+    - id: install-terraform
+      uses: hashicorp/setup-terraform@v1
+
+    - id: checkout-commit
+      uses: actions/checkout@v2
+
+    - id: run-test
+      shell: bash
+      run: make test ${{ env.TEST_DIRECTORY }}
+      env:
+        GITHUB_WORKSPACE: ${{ github.workspace }}
+        GITHUB_SHA: ${{ github.sha }}
