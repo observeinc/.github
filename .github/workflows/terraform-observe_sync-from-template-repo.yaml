@@ -89,12 +89,12 @@ jobs:
         run: |
           _files="$(
             find ${{ env.REPO_TEMPLATE }} \
-            -path "./.github/*" \
-            ! -path "./.github/workflows/*" \
+            -path "${{ env.REPO_TEMPLATE }}/.github/*" \
+            ! -path "${{ env.REPO_TEMPLATE }}/.github/workflows/*" \
             -type f \
             -print &&
             find ${{ env.REPO_TEMPLATE }} \
-            -path "./scripts/*" \
+            -path "${{ env.REPO_TEMPLATE }}/scripts/*" \
             -type f \
             -print &&
             find ${{ env.REPO_TEMPLATE }} \( \
