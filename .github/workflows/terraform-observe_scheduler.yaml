@@ -42,7 +42,7 @@ jobs:
         id: matrix
         shell: bash
         run: |
-          DIRS="$(find . -path "*.tests/*" ! -path "*.terraform*" -type d )"
+          DIRS="$(find . -path "*tftests/*" ! -path "*.terraform*" -type d )"
           [[ ${#DIRS} > 0 ]] && echo "::set-output name=directories::[\"${DIRS//$'\n'/\",\"}\"]" || echo "::set-output name=directories::[]"
     outputs:
       directories: ${{ steps.matrix.outputs.directories }}
