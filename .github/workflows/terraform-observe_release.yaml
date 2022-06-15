@@ -36,10 +36,10 @@ jobs:
         uses: TriPSs/conventional-changelog-action@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          skip-on-empty: 'false'
           skip-version-file: 'true'
           release-count: ${{ inputs.release-count }}
       - name: Mirror in S3
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
         run: make s3
         env:
           TAG: ${{ steps.changelog.outputs.tag }}
@@ -55,14 +55,14 @@ jobs:
       - name: Prepare Slack notification
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_RELEASE_SLACK_URL }}
-        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
         run: |
           echo version=$(echo "${{ steps.changelog.outputs.tag }}" | sed 's/^v//' ) >> $GITHUB_ENV
           echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
       - name: Notify Slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_RELEASE_SLACK_URL }}
-        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
         uses: slackapi/slack-github-action@v1.19.0
         with:
           payload: |
