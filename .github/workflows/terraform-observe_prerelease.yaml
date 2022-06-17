@@ -36,6 +36,13 @@ jobs:
           # We want to know the tag for the last release on this branch; if none can be found, just use the first commit in the repo
           last_release_ref=$(git describe --tags --abbrev=0 2> /dev/null || git rev-list --max-parents=0 HEAD)
           echo commits_since_last_tag=$(git rev-list ${last_release_ref}..HEAD --count) >> $GITHUB_ENV
+          if [[ "${GITHUB_REF_NAME}" = main ]] || [[ "${GITHUB_REF_NAME}" = master ]]; then
+            # If building off of the main branch, this is an "official" prerelease; we give that the "beta" prerelease segment
+            echo alphabeta=beta >> $GITHUB_ENV
+          else
+            # Otherwise, it's an unofficial prerelease; we give that the "alpha" prerelease segment
+            echo alphabeta=alpha >> $GITHUB_ENV
+          fi
       - name: Conventional Changelog Action
         id: changelog
         uses: TriPSs/conventional-changelog-action@v3
@@ -52,7 +59,7 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_PRERELEASE_SLACK_URL }}
         if: ${{ env.SLACK_WEBHOOK_URL != '' }}
         run: |
-          echo version=$(git describe --tags | sed 's/^v//')-${commits_since_last_tag}-g$(git rev-parse --short HEAD~1) >> $GITHUB_ENV
+          echo version=$(git describe --tags | sed 's/^v//')-${commits_since_last_tag}.${alphabeta}+g$(git rev-parse --short HEAD~1) >> $GITHUB_ENV
           echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
       - name: Notify Slack
         env:
