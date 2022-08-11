@@ -1,0 +1,71 @@
+name: Update Terraform Lockfile
+on:
+  workflow_call:
+
+jobs:
+  terraform:
+    name: 'Update Terraform Lockfile'
+    runs-on: ubuntu-latest
+    # Needed to interact with Github's OIDC token
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.2.4
+
+      - name: Close Previous PR
+        id: close_pr
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr close auto_terraform_version
+
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init -no-color -upgrade -backend=false
+
+      - name: Commit Version Lockfile
+        id: commit-lockfile
+        continue-on-error: true
+        run: |
+          git config --local user.email "test@github.com"
+          git config --local user.name "Github Workflow Bot"
+          git add ./.terraform.lock.hcl
+          git commit -m "Update terraform lock"
+
+      - name: Push Version Lockfile
+        uses: ad-m/github-push-action@master
+        if: steps.commit-lockfile.outcome == 'success'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: auto_terraform_version
+          force: true
+
+      - name: Create Pull Request
+        id: create_pr
+        uses: actions/github-script@v6
+        if: steps.commit-lockfile.outcome == 'success'
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const result = await github.rest.pulls.create({
+              title: '[AUTO] Upgrade Terraform Providers',
+              owner,
+              repo,
+              head: 'auto_terraform_version',
+              base: 'main',
+              body: [
+                'This PR is auto-generated to upgrade `.terraform.lock.hcl`.'
+              ].join('\n')
+            });
