@@ -1,0 +1,57 @@
+name: Release and push
+on:
+  workflow_call:
+    secrets:
+      TERRAFORM_RELEASE_SLACK_URL:
+        required: false
+    inputs:
+      release-count:
+        required: false
+        type: string
+        description: Number of releases to preserve in changelog. Default is 0 (regenerates all).
+        default: '0'
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Conventional Changelog Action
+        id: changelog
+        uses: TriPSs/conventional-changelog-action@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          skip-version-file: 'true'
+          release-count: ${{ inputs.release-count }}
+      - name: Create Release
+        uses: actions/create-release@v1
+        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.changelog.outputs.tag }}
+          release_name: ${{ steps.changelog.outputs.tag }}
+          body: ${{ steps.changelog.outputs.clean_changelog }}
+      - name: Prepare Slack notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_RELEASE_SLACK_URL }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
+        run: |
+          echo version=$(echo "${{ steps.changelog.outputs.tag }}" | sed 's/^v//' ) >> $GITHUB_ENV
+          echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-//') >> $GITHUB_ENV
+      - name: Notify Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_RELEASE_SLACK_URL }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
+        uses: slackapi/slack-github-action@v1.19.0
+        with:
+          payload: |
+            {
+              "namespace": "observeinc",
+              "name": "${{ env.name }}",
+              "system": "observe",
+              "version": "${{ env.version }}",
+              "repo": "${{ github.repository }}",
+              "commit_link": "https://github.com/${{ github.repository }}/tree/${{ steps.changelog.outputs.tag }}"
+            }
