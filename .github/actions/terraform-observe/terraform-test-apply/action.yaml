@@ -7,6 +7,8 @@ runs:
 
     - id: install-terraform
       uses: hashicorp/setup-terraform@v1
+      with: 
+        terraform_version: 1.2.9
 
     - id: checkout-commit
       uses: actions/checkout@v2
