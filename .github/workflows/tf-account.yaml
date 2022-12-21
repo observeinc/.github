@@ -79,7 +79,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const MAX_PLAN_LENGTH = 6 // 60000 // Max comment length is 65536
+            const MAX_PLAN_LENGTH = 60000 // Max comment length is 65536
             const plan = '```\n' + process.env.PLAN + '\n```'
 
             const workflowSummaryURL = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
