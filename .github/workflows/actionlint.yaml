@@ -1,0 +1,29 @@
+name: Actionlint
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Download actionlint
+        id: get_actionlint
+        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash) "$ACTIONLINT_VERSION"
+        env:
+          ACTIONLINT_VERSION: latest
+      - name: Check workflow files
+        # There are a large number of shellcheck errors in workflows, particularly related to unsafe use of word-splitting and quotations
+        # Shellcheck validation is temporarily disabled until the offending scripts can be re-written
+        run: ${{ steps.get_actionlint.outputs.executable }} -color -shellcheck=""
