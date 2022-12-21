@@ -63,7 +63,7 @@ jobs:
       - name: Add Plan to Job Summary
         run: |
           {
-            echo "# Terraform Plan\n"
+            echo '# Terraform Plan'
             echo '```'
             echo "$PLAN"
             echo '```'
