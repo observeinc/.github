@@ -63,8 +63,8 @@ jobs:
       - name: Add Plan to Job Summary
         run: |
           {
-            echo "# Terraform Plan"
-            echo '```hcl'
+            echo "# Terraform Plan\n"
+            echo '```'
             echo "$PLAN"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
@@ -85,7 +85,7 @@ jobs:
             #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
             <details><summary>Show Plan</summary>
 
-            \`\`\`\`hcl\n
+            \`\`\`\`\n
             ${process.env.PLAN}
             \`\`\`\`
             </details>
