@@ -54,7 +54,7 @@ jobs:
 
       - name: Create Pull Request
         id: create_pr
-        uses: actions/github-script@v6
+        uses: actions/github-script@v6.3.3
         if: steps.commit-lockfile.outcome == 'success'
         with:
           script: |
