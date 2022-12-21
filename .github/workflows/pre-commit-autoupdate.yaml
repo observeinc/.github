@@ -21,7 +21,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
           aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       
       - uses: actions/setup-python@v2
       
