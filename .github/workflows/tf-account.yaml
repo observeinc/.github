@@ -79,15 +79,18 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const MAX_PLAN_LENGTH = 60000 // Max comment length is 65536
+            const plan = '```\n' + process.env.PLAN + '\n```'
+
+            const workflowSummaryURL = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+
             const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
             #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
-            <details><summary>Show Plan</summary>
+            <details><summary>Show <a href="${workflowSummaryURL}">Plan</a></summary>
 
-            \`\`\`\`\n
-            ${process.env.PLAN}
-            \`\`\`\`
+            ${plan.length <= MAX_PLAN_LENGTH ? plan : `_The plan is too large to include in a comment, open the [workflow summary](${workflowSummaryURL}) to view it._`}
             </details>
 
             **Pusher**: @${{ github.actor }}, **Action**: \`${{ github.event_name }}\``;
