@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           DIRS="$(find . -path "*tftests/*" ! -path "*.terraform*" -type d )"
-          [[ ${#DIRS} > 0 ]] && echo "::set-output name=directories::[\"${DIRS//$'\n'/\",\"}\"]" || echo "::set-output name=directories::[]"
+          [[ ${#DIRS} > 0 ]] && echo "directories=[\"${DIRS//$'\n'/\",\"}\"]" >> "$GITHUB_OUTPUT" || echo "directories=[]" >> "$GITHUB_OUTPUT"
     outputs:
       directories: ${{ steps.matrix.outputs.directories }}
 

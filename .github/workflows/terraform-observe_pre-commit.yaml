@@ -22,7 +22,7 @@ jobs:
         id: matrix
         run: |
           DIRS=$(python -c "import json; import glob; print(json.dumps([x.replace('/versions.tf', '') for x in glob.glob('./**/versions.tf', recursive=True)]))")
-          echo "::set-output name=directories::$DIRS"
+          echo "directories=$DIRS" >> "$GITHUB_OUTPUT"
     outputs:
       directories: ${{ steps.matrix.outputs.directories }}
 
