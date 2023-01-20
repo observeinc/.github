@@ -27,6 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: observeinc/.github/.github/actions/shared/single-commit@main
+      - uses: observeinc/.github/.github/actions/shared/single-commit@jed/test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -42,7 +42,7 @@ jobs:
         directory: ${{ fromJson(needs.get-test-directories.outputs.directories) }}
     steps:
       - name: Validate OPAL with TF apply/destroy
-        uses: observeinc/.github/.github/actions/terraform-observe/terraform-test-apply@main
+        uses: observeinc/.github/.github/actions/terraform-observe/terraform-test-apply@jed/test
         env: 
           OBSERVE_CUSTOMER: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_CUSTOMER }}
           OBSERVE_DOMAIN: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_DOMAIN }}
@@ -59,7 +59,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Run CI Tests Checks
-        uses: observeinc/.github/.github/actions/terraform-observe/ci-tests@main
+        uses: observeinc/.github/.github/actions/terraform-observe/ci-tests@jed/test
         with:
           skip: ${{ inputs.skip }}
           token: ${{ secrets.GITHUB_TOKEN }}

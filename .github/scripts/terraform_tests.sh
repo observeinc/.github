@@ -29,4 +29,4 @@ cleanup() {
 
 ${CMD} init
 trap 'cleanup $? $LINENO' EXIT
-${CMD} apply -auto-approve -input=false
+${CMD} apply -parallelism=1 -auto-approve -input=false
