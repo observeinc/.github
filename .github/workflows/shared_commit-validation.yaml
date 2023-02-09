@@ -10,7 +10,7 @@ on:
 
 jobs:
   conventional-commits:
-    if: "!contains(fromJSON(inputs.skip).jobs, 'conventional-commits')"
+    if: "github.event_name == 'pull_request' && !contains(fromJSON(inputs.skip).jobs, 'conventional-commits')"
     name: Validate PR title
     runs-on: ubuntu-latest
     steps:
@@ -22,7 +22,7 @@ jobs:
           wip: true
 
   single-commit:
-    if: "!contains(fromJSON(inputs.skip).jobs, 'single-commit')"
+    if: "github.event_name == 'pull_request' && !contains(fromJSON(inputs.skip).jobs, 'single-commit')"
     name: Ensure Single Commit 
     runs-on: ubuntu-latest
     steps:
