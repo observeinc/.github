@@ -17,7 +17,7 @@ jobs:
 
   get-test-directories:
     if: "!contains(fromJSON(inputs.skip).jobs, 'terraform-tests')"
-    name: Get Test Directories For OPAL Validation
+    name: Get Terraform Test Directories
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -34,21 +34,27 @@ jobs:
   terraform-test-apply:
     needs: get-test-directories
     if: ${{ needs.get-test-directories.outputs.directories != '[]' && needs.get-test-directories.outputs.directories != '' }}
-    name: OPAL Validation
+    name: Test Terraform Module
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         directory: ${{ fromJson(needs.get-test-directories.outputs.directories) }}
     steps:
-      - name: Validate OPAL with TF apply/destroy
-        uses: observeinc/.github/.github/actions/terraform-observe/terraform-test-apply@main
-        env: 
+      - uses: hashicorp/setup-terraform@v2
+        with: 
+          terraform_version: 1.2.9
+      - uses: actions/checkout@v2
+      - name: make test
+        run: make test "${{ matrix.directory }}"
+        env:
           OBSERVE_CUSTOMER: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_CUSTOMER }}
           OBSERVE_DOMAIN: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_DOMAIN }}
           OBSERVE_USER_EMAIL: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_EMAIL }}
           OBSERVE_USER_PASSWORD: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_PASSWORD }}
-          TEST_DIRECTORY: ${{ matrix.directory }}
+          
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+          GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   ci-tests:
