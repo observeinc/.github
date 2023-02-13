@@ -50,18 +50,3 @@ jobs:
           OBSERVE_USER_PASSWORD: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_PASSWORD }}
           TEST_DIRECTORY: ${{ matrix.directory }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  ci-tests:
-    if: "!contains(fromJSON(inputs.skip).jobs, 'ci-tests')"
-    name: CI Tests Placeholder
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Run CI Tests Checks
-        uses: observeinc/.github/.github/actions/terraform-observe/ci-tests@main
-        with:
-          skip: ${{ inputs.skip }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
