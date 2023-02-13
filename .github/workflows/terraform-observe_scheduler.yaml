@@ -27,7 +27,7 @@ jobs:
   terraform-test-apply:
     name: Test Terraform Module
     needs: find-modules
-    if: ${{ needs.find-modules.outputs.directories != '[]' && needs.find-modules.outputs.directories != '' }}
+    if: ${{ needs.find-modules.outputs.modules != '[]' && needs.find-modules.outputs.modules != '' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
