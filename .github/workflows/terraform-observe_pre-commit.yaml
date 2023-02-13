@@ -9,33 +9,24 @@ on:
         required: true
 
 jobs:
-  # Min Terraform version(s)
-  getDirectories:
-    name: Get root directories
+  find-modules:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Install Python
-        uses: actions/setup-python@v4
-      - name: Build matrix
-        id: matrix
-        run: |
-          DIRS=$(python -c "import json; import glob; print(json.dumps([x.replace('/versions.tf', '') for x in glob.glob('./**/versions.tf', recursive=True)]))")
-          echo "directories=$DIRS" >> "$GITHUB_OUTPUT"
+      - id: find
+        uses: bendrucker/find-terraform-modules@v1
     outputs:
-      directories: ${{ steps.matrix.outputs.directories }}
+      modules: ${{ steps.find.outputs.modules }}
 
   preCommitMinVersions:
     name: Min TF validate
-    needs: getDirectories
+    needs: find-modules
     runs-on: ubuntu-latest
     permissions:
       id-token: write
       contents: read
     strategy:
       matrix:
-        directory: ${{ fromJson(needs.getDirectories.outputs.directories) }}
+        directory: ${{ fromJson(needs.find-modules.outputs.modules) }}
     env:
       # This is a temporary workaround for `customer` being required by Observe provider
       # Validating submodules will fail without this (https://github.com/gruntwork-io/pre-commit/issues/42)

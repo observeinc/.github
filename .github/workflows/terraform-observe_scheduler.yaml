@@ -15,38 +15,30 @@ jobs:
     with:
       skip: ${{ inputs.skip }}
 
-  get-test-directories:
-    if: "!contains(fromJSON(inputs.skip).jobs, 'terraform-tests')"
-    name: Get Terraform Test Directories
+  find-modules:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Build matrix
-        id: matrix
-        shell: bash
-        run: |
-          DIRS="$(find . -path "*tftests/*" ! -path "*.terraform*" -type d )"
-          [[ ${#DIRS} > 0 ]] && echo "directories=[\"${DIRS//$'\n'/\",\"}\"]" >> "$GITHUB_OUTPUT" || echo "directories=[]" >> "$GITHUB_OUTPUT"
+      - id: find
+        uses: bendrucker/find-terraform-modules@v1
+        with:
+          working-directory: ./tftests
     outputs:
-      directories: ${{ steps.matrix.outputs.directories }}
-
+      modules: ${{ steps.find.outputs.modules }}
   terraform-test-apply:
-    needs: get-test-directories
-    if: ${{ needs.get-test-directories.outputs.directories != '[]' && needs.get-test-directories.outputs.directories != '' }}
+    needs: find-modules
     name: Test Terraform Module
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        directory: ${{ fromJson(needs.get-test-directories.outputs.directories) }}
+        module: ${{ fromJson(needs.find-modules.outputs.modules) }}
     steps:
       - uses: hashicorp/setup-terraform@v2
         with: 
           terraform_version: 1.2.9
       - uses: actions/checkout@v2
       - name: make test
-        run: make test "${{ matrix.directory }}"
+        run: make test "${{ matrix.module }}"
         env:
           OBSERVE_CUSTOMER: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_CUSTOMER }}
           OBSERVE_DOMAIN: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_DOMAIN }}
