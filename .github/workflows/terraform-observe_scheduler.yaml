@@ -49,18 +49,3 @@ jobs:
           GITHUB_WORKSPACE: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  ci-tests:
-    if: "!contains(fromJSON(inputs.skip).jobs, 'ci-tests')"
-    name: CI Tests Placeholder
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Run CI Tests Checks
-        uses: observeinc/.github/.github/actions/terraform-observe/ci-tests@main
-        with:
-          skip: ${{ inputs.skip }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-        env: 
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
