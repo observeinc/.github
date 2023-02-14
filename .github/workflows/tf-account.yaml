@@ -13,16 +13,15 @@ on:
       TF_BACKEND_S3_REGION:
         required: true
     inputs:
-      TERRAFORM_VERSION:
+      terraform-version:
+        description: 'Terraform version'
         required: false
         type: string
-
-env:
-  TERRAFORM_VERSION: ${{ inputs.TERRAFORM_VERSION || vars.TERRAFORM_VERSION || '1.2.4' }}
+        default: '1.2.4'
 
 jobs:
   terraform:
-    name: 'Run terraform' 
+    name: 'Run terraform'
     runs-on: ubuntu-latest
     # Needed to interact with Github's OIDC token
     permissions:
@@ -36,7 +35,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: ${{ env.TERRAFORM_VERSION }}
+          terraform_version: ${{ inputs.terraform-version }}
 
       - name: Terraform Format
         id: fmt
