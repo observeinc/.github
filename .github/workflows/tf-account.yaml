@@ -22,7 +22,7 @@ env:
 
 jobs:
   terraform:
-    name: 'Run terraform'
+    name: 'Run terraform' 
     runs-on: ubuntu-latest
     # Needed to interact with Github's OIDC token
     permissions:
