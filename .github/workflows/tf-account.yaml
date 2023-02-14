@@ -12,6 +12,13 @@ on:
         required: true
       TF_BACKEND_S3_REGION:
         required: true
+    inputs:
+      TERRAFORM_VERSION:
+        required: false
+        type: string
+
+env:
+  TERRAFORM_VERSION: ${{ inputs.TERRAFORM_VERSION || var.TERRAFORM_VERSION || '1.2.4' }}
 
 jobs:
   terraform:
@@ -29,7 +36,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.2.4
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
 
       - name: Terraform Format
         id: fmt
