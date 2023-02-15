@@ -33,7 +33,7 @@ jobs:
 
       - name: Terraform Format
         id: fmt
-        run: terraform fmt -check
+        uses: dflook/terraform-fmt-check@v1
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1-node16
@@ -52,7 +52,7 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate -no-color
+        uses: dflook/terraform-validate@v1
 
       - name: Terraform Plan
         id: plan
