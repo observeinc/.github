@@ -21,7 +21,7 @@ jobs:
       - id: find
         uses: bendrucker/find-terraform-modules@v1
         with:
-          working-directory: ./tftests
+          glob: ./**/tftests/*
     outputs:
       modules: ${{ steps.find.outputs.modules }}
   terraform-test-apply:
