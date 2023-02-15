@@ -7,6 +7,11 @@ on:
         required: false
         type: string
         description: "example: {\"jobs\": [\"validate-pr-title\", \"single-commit\"]}"
+      terraform-version:
+        description: 'Terraform version'
+        required: false
+        type: string
+        default: '1.2.9'
 
 jobs:
   commit-validation:
@@ -43,7 +48,7 @@ jobs:
     steps:
       - uses: hashicorp/setup-terraform@v2
         with: 
-          terraform_version: 1.2.9
+          terraform_version: ${{ inputs.terraform-version }}
       - uses: actions/checkout@v2
       - name: make test
         run: make test "${{ matrix.directory }}"
