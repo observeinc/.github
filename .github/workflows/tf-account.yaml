@@ -14,7 +14,7 @@ on:
         required: true
     inputs:
       terraform-version:
-        description: 'Terraform version' 
+        description: 'Terraform version'
         required: false
         type: string
         default: '1.2.4'
