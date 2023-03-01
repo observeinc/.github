@@ -83,4 +83,4 @@ jobs:
           cmd: yq '.iconUrl' manifest.yaml
       - name: Validate App Icon URL
         if: ${{ !startsWith(steps.get_icon_url.outputs.result, 'https://assets.observeinc.com/') && steps.check_manifest.outputs.files_exists == 'true' }}
-        run: echo "::error file=mainfest.yaml, title=Invalid App Icon URL::App icon URLs must live in the 'assets.observeinc.com' domain" && exit 1
+        run: echo "::error file=manifest.yaml, title=Invalid App Icon URL::App icon URLs must live in the 'assets.observeinc.com' domain" && exit 1
