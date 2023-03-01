@@ -83,6 +83,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           cmd: yq '.iconUrl' manifest.yaml
-      # - name: Validate App Icon URL
-      #   if: ! startsWith(${{ steps.get_icon_url.outputs.result }}, 'https://assets.observeinc.com/')
-      #   run: exit 1
+      - name: Validate App Icon URL
+        if: ! startsWith(${{ steps.get_icon_url.outputs.result }}, 'https://assets.observeinc.com/')
+        run: exit 1
