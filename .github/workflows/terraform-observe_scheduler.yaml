@@ -61,3 +61,28 @@ jobs:
           GITHUB_WORKSPACE: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+  # Validate App Icon URL is internal
+  validateAppIcon:
+    name: Validate App Icon
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check manifest.yaml exists
+        id: check_manifest
+        uses: andstor/file-existence-action@2.0.0
+        with:
+          files: "manifest.yaml"
+      - name: Get App Icon URL
+        id: get_icon_url
+        uses: mikefarah/yq@v4.31.1
+        if: steps.check_manifest.outputs.files_exists == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          cmd: yq '.iconUrl' manifest.yaml
+      - name: Validate App Icon URL
+        if: ! startsWith(${{ steps.get_icon_url.outputs.result }}, 'https://assets.observeinc.com/')
+        run: exit 1
+
