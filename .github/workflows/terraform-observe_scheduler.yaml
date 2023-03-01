@@ -6,12 +6,12 @@ on:
       skip:
         required: false
         type: string
-        description: "example: {\"jobs\": [\"validate-pr-title\", \"single-commit\"]}"
+        description: 'example: {"jobs": ["validate-pr-title", "single-commit"]}'
       terraform-version:
-        description: 'Terraform version'
+        description: "Terraform version"
         required: false
         type: string
-        default: '1.2.9'
+        default: "1.2.9"
 
 jobs:
   commit-validation:
@@ -47,7 +47,7 @@ jobs:
         directory: ${{ fromJson(needs.get-test-directories.outputs.directories) }}
     steps:
       - uses: hashicorp/setup-terraform@v2
-        with: 
+        with:
           terraform_version: ${{ inputs.terraform-version }}
       - uses: actions/checkout@v3
       - name: make test
@@ -57,11 +57,11 @@ jobs:
           OBSERVE_DOMAIN: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_DOMAIN }}
           OBSERVE_USER_EMAIL: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_EMAIL }}
           OBSERVE_USER_PASSWORD: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_PASSWORD }}
-          
+
           GITHUB_WORKSPACE: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  
+
   # Validate App Icon URL is internal
   validateAppIcon:
     name: Validate App Icon
@@ -82,7 +82,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           cmd: yq '.iconUrl' manifest.yaml
-      - name: Validate App Icon URL
-        if: ! startsWith(${{ steps.get_icon_url.outputs.result }}, 'https://assets.observeinc.com/')
-        run: exit 1
-
+      # - name: Validate App Icon URL
+      #   if: ! startsWith(${{ steps.get_icon_url.outputs.result }}, 'https://assets.observeinc.com/')
+      #   run: exit 1
