@@ -63,7 +63,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # Validate App Icon URL is internal
-  validateAppIcon:
+  validate-app-icon:
     name: Validate App Icon
     runs-on: ubuntu-latest
     permissions:
@@ -79,10 +79,8 @@ jobs:
         id: get_icon_url
         uses: mikefarah/yq@v4.31.1
         if: steps.check_manifest.outputs.files_exists == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           cmd: yq '.iconUrl' manifest.yaml
       - name: Validate App Icon URL
         if: ${{ !startsWith(steps.get_icon_url.outputs.result, 'https://assets.observeinc.com/') && steps.check_manifest.outputs.files_exists == 'true' }}
-        run: echo "App icon URLs must live in the 'assets.observeinc.com' domain" && exit 1
+        run: echo "::error file=manifest.yaml,title=Invalid App Icon URL::App icon URLs must live in the 'assets.observeinc.com' domain" && exit 1
