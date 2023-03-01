@@ -14,10 +14,6 @@ on:
         default: '1.2.9'
 
 jobs:
-  app-icon-validation:
-    uses: ./.github/workflows/terraform-observe_app-icon-validation.yaml
-    with:
-      skip: ${{ inputs.skip }}
   commit-validation:
     uses: ./.github/workflows/shared_commit-validation.yaml
     secrets: inherit
