@@ -69,6 +69,7 @@ jobs:
     permissions:
       contents: read
     steps:
+      - uses: actions/checkout@v3
       - name: Check manifest.yaml exists
         id: check_manifest
         uses: andstor/file-existence-action@v2
