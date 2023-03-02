@@ -81,6 +81,11 @@ jobs:
         if: steps.check_manifest.outputs.files_exists == 'true'
         with:
           cmd: yq 'with_entries(.key |= downcase).iconurl' manifest.yaml
-      - name: Validate App Icon URL
+      - name: Validate App Icon URL Is Internal
         if: ${{ !startsWith(steps.get_icon_url.outputs.result, 'https://assets.observeinc.com/') && steps.check_manifest.outputs.files_exists == 'true' }}
         run: echo "::error file=manifest.yaml,title=Invalid App Icon URL::App icon URLs must live in the 'assets.observeinc.com' domain" && exit 1
+      - name: Validate App Icon URL Is Working
+        uses: filiph/linkcheck@3.0.0
+        if: steps.check_manifest.outputs.files_exists == 'true'
+        with:
+          arguments: steps.get_icon_url.outputs.result
