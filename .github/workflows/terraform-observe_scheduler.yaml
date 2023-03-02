@@ -88,4 +88,4 @@ jobs:
         uses: filiph/linkcheck@3.0.0
         if: steps.check_manifest.outputs.files_exists == 'true'
         with:
-          arguments: steps.get_icon_url.outputs.result
+          arguments: ${{ steps.get_icon_url.outputs.result }}
