@@ -41,7 +41,7 @@ jobs:
           body: ${{ steps.changelog.outputs.clean_changelog }}
     outputs:
       tag: ${{ steps.changelog.outputs.tag }}
-      skipped: ${{ !inputs.push || steps.changelog.outputs.skipped == 'false' }}
+      pushed: ${{ inputs.push && steps.changelog.outputs.skipped == 'false' }}
   slack:
     runs-on: ubuntu-latest
     needs:
@@ -49,7 +49,7 @@ jobs:
 
     # jobs.<job_id>.if cannot access secrets directly, so if must be set at the step level to noop when the URL is unset
     # https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
-    if: ${{ needs.release.outputs.skipped != 'false' }}
+    if: ${{ fromJson(needs.release.outputs.pushed) }}
     env:
       SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_RELEASE_SLACK_URL }}
 
