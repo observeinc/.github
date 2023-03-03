@@ -10,6 +10,11 @@ on:
         type: string
         description: Number of releases to preserve in changelog. Default is 0 (regenerates all).
         default: '0'
+      push:
+        required: false
+        type: boolean
+        description: Pushes the release commit and tag. Disable this to perform a dry-run. 
+        default: true
 
 jobs:
   bump:
@@ -24,6 +29,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           skip-version-file: 'true'
           release-count: ${{ inputs.release-count }}
+          git-push: ${{ inputs.push }}
       - name: Create Release
         uses: actions/create-release@v1
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
