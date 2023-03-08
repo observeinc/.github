@@ -10,9 +10,14 @@ on:
         type: string
         description: Number of releases to preserve in changelog. Default is 0 (regenerates all).
         default: '0'
+      push:
+        required: false
+        type: boolean
+        description: Pushes the release commit and tag. Disable this to perform a dry-run. 
+        default: true
 
 jobs:
-  bump:
+  release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -24,26 +29,38 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           skip-version-file: 'true'
           release-count: ${{ inputs.release-count }}
+          git-push: ${{ inputs.push }}
       - name: Create Release
         uses: actions/create-release@v1
-        if: ${{ steps.changelog.outputs.skipped == 'false' }}
+        if: ${{ inputs.push && steps.changelog.outputs.skipped == 'false' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.changelog.outputs.tag }}
           release_name: ${{ steps.changelog.outputs.tag }}
           body: ${{ steps.changelog.outputs.clean_changelog }}
+    outputs:
+      tag: ${{ steps.changelog.outputs.tag }}
+      pushed: ${{ inputs.push && steps.changelog.outputs.skipped == 'false' }}
+  slack:
+    runs-on: ubuntu-latest
+    needs:
+      - release
+
+    # jobs.<job_id>.if cannot access secrets directly, so if must be set at the step level to noop when the URL is unset
+    # https://docs.github.com/en/actions/learn-github-actions/contexts#context-availability
+    if: ${{ fromJson(needs.release.outputs.pushed) }}
+    env:
+      SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_RELEASE_SLACK_URL }}
+
+    steps:
       - name: Prepare Slack notification
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_RELEASE_SLACK_URL }}
-        if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
         run: |
-          echo version=$(echo "${{ steps.changelog.outputs.tag }}" | sed 's/^v//' ) >> $GITHUB_ENV
+          echo version=$(echo "${{ needs.release.outputs.tag }}" | sed 's/^v//' ) >> $GITHUB_ENV
           echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-//') >> $GITHUB_ENV
       - name: Notify Slack
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_RELEASE_SLACK_URL }}
-        if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
+        if: ${{ env.SLACK_WEBHOOK_URL != '' }}
         uses: slackapi/slack-github-action@v1.23.0
         with:
           payload: |
@@ -53,5 +70,5 @@ jobs:
               "system": "observe",
               "version": "${{ env.version }}",
               "repo": "${{ github.repository }}",
-              "commit_link": "https://github.com/${{ github.repository }}/tree/${{ steps.changelog.outputs.tag }}"
+              "commit_link": "https://github.com/${{ github.repository }}/tree/${{ needs.release.outputs.tag }}"
             }
