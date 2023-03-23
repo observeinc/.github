@@ -64,9 +64,12 @@ jobs:
         id: plan
         if: github.event_name == 'pull_request'
         run: |
-          terraform plan -no-color -out=plan
-          terraform show -no-color plan > plan.out
-          echo "path=plan.out" >> $GITHUB_OUTPUT
+          path='plan'
+          txt_path='plan.txt'
+
+          terraform plan -no-color -out="$path"
+          terraform show -no-color "$path" > "$txt_path"
+          echo "path=${txt_path}" >> $GITHUB_OUTPUT
         continue-on-error: true
       
       - uses: actions/upload-artifact@v3
