@@ -84,6 +84,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            const fs = require('fs')
             const MAX_PLAN_LENGTH = 60000 // Max comment length is 65536
             const plan = '```\n' + fs.readFileSync('${{ steps.plan.outputs.file }}', 'utf8') + '\n```'
 
