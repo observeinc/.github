@@ -65,18 +65,21 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           path='plan'
-          txt_path='plan.txt'
-
           terraform plan -no-color -out="$path"
-          terraform show -no-color "$path" > "$txt_path"
-          echo "path=${txt_path}" >> $GITHUB_OUTPUT
+          echo "path=${path}" >> $GITHUB_OUTPUT
         continue-on-error: true
-      
+      - name: Write plan file
+        id: plan_text
+        if: steps.plan.outcome == 'success'
+        run: |
+          path='plan.txt'
+          terraform show -no-color "${{ steps.plan.path }}" > "$path"
+          echo "path=${path}" >> $GITHUB_OUTPUT
       - uses: actions/upload-artifact@v3
         if: steps.plan.outcome == 'success'
         with:
           name: plan
-          path: ${{ steps.plan.outputs.path }}
+          path: ${{ steps.plan_text.outputs.path }}
 
       - name: Add Plan to Job Summary
         if: steps.plan.outcome == 'success'
@@ -84,7 +87,7 @@ jobs:
           {
             echo '# Terraform Plan'
             echo '```'
-            cat "${{ steps.plan.outputs.path }}"
+            cat "${{ steps.plan_text.outputs.path }}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -96,7 +99,7 @@ jobs:
           script: |
             const fs = require('fs')
             const MAX_PLAN_LENGTH = 60000 // Max comment length is 65536
-            const plan = '```\n' + fs.readFileSync('${{ steps.plan.outputs.path }}', 'utf8') + '\n```'
+            const plan = '```\n' + fs.readFileSync('${{ steps.plan_text.outputs.path }}', 'utf8') + '\n```'
 
             const workflowSummaryURL = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
