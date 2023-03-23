@@ -63,7 +63,9 @@ jobs:
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
-        run: terraform plan -no-color
+        run: |
+          terraform plan -no-color -out=plan
+          terraform show -no-color plan > plan.out
         continue-on-error: true
 
       - name: Add Plan to Job Summary
@@ -71,22 +73,18 @@ jobs:
           {
             echo '# Terraform Plan'
             echo '```'
-            echo "$PLAN"
+            cat plan.out
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-        env:
-          PLAN: "${{ steps.plan.outputs.stdout }}"
 
       - name: Create Pull Request Comment
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
-        env:
-          PLAN: "${{ steps.plan.outputs.stdout }}"
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const MAX_PLAN_LENGTH = 60000 // Max comment length is 65536
-            const plan = '```\n' + process.env.PLAN + '\n```'
+            const plan = '```\n' + fs.readFileSync('plan.out', 'utf8') + '\n```'
 
             const workflowSummaryURL = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
