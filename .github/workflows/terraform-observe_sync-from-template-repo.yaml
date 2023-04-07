@@ -100,6 +100,7 @@ jobs:
             find ${{ env.REPO_TEMPLATE }} \( \
             -name "Makefile" -o \
             -name ".pre-commit-config.yaml" -o \
+            -name ".tflint.hcl" -o \
             -name "LICENSE" \) \
             -type f \
             -print)"
