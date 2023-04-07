@@ -128,3 +128,5 @@ jobs:
         # Run all pre-commit checks on max version supported
         if: ${{ matrix.version ==  needs.getBaseVersion.outputs.maxVersion }}
         run: pre-commit run --color=always --show-diff-on-failure --all-files
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
