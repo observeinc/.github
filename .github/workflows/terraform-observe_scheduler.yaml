@@ -49,8 +49,38 @@ jobs:
       - uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ inputs.terraform-version }}
+
+      - name: Checkout Main
+        uses: actions/checkout@v3
+        if: startsWith(${{ matrix.directory }}, 'upgrade')
+        with:
+          ref: "main"
+          fetch-depth: '0'
+
+      - name: make test upgrade
+        if: startsWith(${{ matrix.directory }}, 'upgrade')
+        run: |
+
+          make test "${{ matrix.directory }} DO_NOT_RUN_DELETE"
+
+          git checkout ${{ github.head_ref }}
+
+          make test "${{ matrix.directory }}"
+        env:
+          OBSERVE_CUSTOMER: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_CUSTOMER }}
+          OBSERVE_DOMAIN: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_DOMAIN }}
+          OBSERVE_USER_EMAIL: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_EMAIL }}
+          OBSERVE_USER_PASSWORD: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_PASSWORD }}
+
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/checkout@v3
+        if: ! startsWith(${{ matrix.directory }}, 'upgrade')
+
       - name: make test
+        if: ! startsWith(${{ matrix.directory }}, 'upgrade')
         run: make test "${{ matrix.directory }}"
         env:
           OBSERVE_CUSTOMER: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_CUSTOMER }}
