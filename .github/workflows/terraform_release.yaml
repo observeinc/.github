@@ -61,7 +61,7 @@ jobs:
           echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-//') >> $GITHUB_ENV
       - name: Notify Slack
         if: ${{ env.SLACK_WEBHOOK_URL != '' }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.24.0
         with:
           payload: |
             {
