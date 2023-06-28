@@ -12,15 +12,9 @@ jobs:
   auto-update:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: write
       pull-requests: write
     steps:
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
-          aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - uses: actions/checkout@v3
       
       - uses: actions/setup-python@v4
