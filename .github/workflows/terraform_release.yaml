@@ -1,6 +1,8 @@
 name: Release and push
 on:
   workflow_call:
+    branches:
+      - main
     secrets:
       TERRAFORM_RELEASE_SLACK_URL:
         required: false
