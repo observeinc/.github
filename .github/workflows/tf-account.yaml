@@ -12,12 +12,25 @@ on:
         required: true
       TF_BACKEND_S3_REGION:
         required: true
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
     inputs:
       terraform-version:
         description: 'Terraform version'
         required: false
         type: string
         default: '1.5.4'
+      TS_TAGS:
+        required: false
+        type: string
+      HTTPS_PROXY:
+        required: false
+        type: string
+      NO_PROXY:
+        required: false
+        type: string
 
 jobs:
   terraform:
@@ -37,6 +50,15 @@ jobs:
         with:
           terraform_version: ${{ inputs.terraform-version }}
 
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        # a tailscale oauth client requires tags
+        if: inputs.TS_TAGS != ''
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: ${{ inputs.TS_TAGS }}
+
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
@@ -50,6 +72,8 @@ jobs:
 
       - name: Terraform Init
         id: init
+        # We avoid proxying on init, otherwise the exclusion
+        # list must be extended to cover provider registries.
         run: |
           terraform init -no-color \
             -backend-config="bucket=${{ secrets.TF_BACKEND_S3_BUCKET }}" \
@@ -63,6 +87,9 @@ jobs:
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
+        env:
+          HTTPS_PROXY: ${{ inputs.HTTPS_PROXY }}
+          NO_PROXY: ${{ inputs.NO_PROXY }}
         run: |
           path='plan'
           txt_path='plan.txt'
@@ -123,4 +150,7 @@ jobs:
 
       - name: Terraform Apply
         if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          HTTPS_PROXY: ${{ inputs.HTTPS_PROXY }}
+          NO_PROXY: ${{ inputs.NO_PROXY }}
         run: terraform apply -auto-approve
