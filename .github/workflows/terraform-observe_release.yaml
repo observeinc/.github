@@ -1,8 +1,6 @@
 name: Release and push
 on:
   workflow_call:
-    branches:
-      - main
     secrets:
       TERRAFORM_MODULES_ROLE_ARN:
         required: true
@@ -16,14 +14,22 @@ on:
         type: string
         description: Number of releases to preserve in changelog. Default is 0 (regenerates all).
         default: '0'
-      release-even-if-empty:
-        required: false
-        type: boolean
-        description: Set to true to force a release even if the changelog is empty. Useful for releasing invisible changes.
-        default: false
 
 jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    outputs:
+      branch: ${{ steps.get_branch.outputs.branch }}
+    steps:
+      - name: get_branch
+        id: get_branch
+        run: |
+          echo "branch=$(echo ${GITHUB_REF##*/})" >> $GITHUB_OUTPUT
+          echo "will only release if branch is main: ${GITHUB_REF##*/}"
+
   bump:
+    needs: [check-branch]
+    if: needs.check-branch.outputs.branch == 'main'
     runs-on: ubuntu-latest
     # Needed to interact with Github's OIDC token
     permissions:
@@ -38,6 +44,8 @@ jobs:
           aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          ref: main
       - name: Conventional Changelog Action
         id: changelog
         uses: TriPSs/conventional-changelog-action@v3
@@ -45,7 +53,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           skip-version-file: 'true'
           release-count: ${{ inputs.release-count }}
-          skip-on-empty: ${{ inputs.release-even-if-empty == 'false' }}
       - name: Mirror in S3
         if: ${{ steps.changelog.outputs.skipped == 'false' }}
         run: make s3
