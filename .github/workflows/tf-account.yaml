@@ -59,15 +59,18 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: ${{ inputs.tailscale-tags }}
 
+      - name: Config Proxy Environment Variables
+        if: inputs.https-proxy != ''
+        run: |
+          echo "HTTPS_PROXY=${{ inputs.https-proxy }}" >> "$GITHUB_ENV"
+          echo "NO_PROXY=${{ inputs.no-proxy }}" >> "$GITHUB_ENV"
+
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
-        env:
-          HTTPS_PROXY: ${{ inputs.https-proxy }}
-          NO_PROXY: ${{ inputs.no-proxy }}
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ github.sha }}
@@ -75,9 +78,6 @@ jobs:
 
       - name: Terraform Init
         id: init
-        env:
-          HTTPS_PROXY: ${{ inputs.https-proxy }}
-          NO_PROXY: ${{ inputs.no-proxy }}
         run: |
           terraform init -no-color \
             -backend-config="bucket=${{ secrets.TF_BACKEND_S3_BUCKET }}" \
@@ -91,9 +91,6 @@ jobs:
       - name: Terraform Plan
         id: plan
         if: github.event_name == 'pull_request'
-        env:
-          HTTPS_PROXY: ${{ inputs.https-proxy }}
-          NO_PROXY: ${{ inputs.no-proxy }}
         run: |
           path='plan'
           txt_path='plan.txt'
