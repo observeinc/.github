@@ -22,13 +22,13 @@ on:
         required: false
         type: string
         default: '1.5.4'
-      TS_TAGS:
+      tailscale-tags:
         required: false
         type: string
-      HTTPS_PROXY:
+      https-proxy:
         required: false
         type: string
-      NO_PROXY:
+      no-proxy:
         required: false
         type: string
 
@@ -53,11 +53,11 @@ jobs:
       - name: Tailscale
         uses: tailscale/github-action@v2
         # a tailscale oauth client requires tags
-        if: inputs.TS_TAGS != ''
+        if: inputs.tailscale-tags != ''
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: ${{ inputs.TS_TAGS }}
+          tags: ${{ inputs.tailscale-tags }}
 
       - name: Terraform Format
         id: fmt
@@ -65,6 +65,9 @@ jobs:
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
+        env:
+          HTTPS_PROXY: ${{ inputs.https-proxy }}
+          NO_PROXY: ${{ inputs.no-proxy }}
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ github.sha }}
@@ -72,8 +75,9 @@ jobs:
 
       - name: Terraform Init
         id: init
-        # We avoid proxying on init, otherwise the exclusion
-        # list must be extended to cover provider registries.
+        env:
+          HTTPS_PROXY: ${{ inputs.https-proxy }}
+          NO_PROXY: ${{ inputs.no-proxy }}
         run: |
           terraform init -no-color \
             -backend-config="bucket=${{ secrets.TF_BACKEND_S3_BUCKET }}" \
@@ -88,8 +92,8 @@ jobs:
         id: plan
         if: github.event_name == 'pull_request'
         env:
-          HTTPS_PROXY: ${{ inputs.HTTPS_PROXY }}
-          NO_PROXY: ${{ inputs.NO_PROXY }}
+          HTTPS_PROXY: ${{ inputs.https-proxy }}
+          NO_PROXY: ${{ inputs.no-proxy }}
         run: |
           path='plan'
           txt_path='plan.txt'
@@ -151,6 +155,6 @@ jobs:
       - name: Terraform Apply
         if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
-          HTTPS_PROXY: ${{ inputs.HTTPS_PROXY }}
-          NO_PROXY: ${{ inputs.NO_PROXY }}
+          HTTPS_PROXY: ${{ inputs.https-proxy }}
+          NO_PROXY: ${{ inputs.no-proxy }}
         run: terraform apply -auto-approve
