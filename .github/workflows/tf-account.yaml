@@ -12,12 +12,25 @@ on:
         required: true
       TF_BACKEND_S3_REGION:
         required: true
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
     inputs:
       terraform-version:
         description: 'Terraform version'
         required: false
         type: string
         default: '1.5.4'
+      tailscale-tags:
+        required: false
+        type: string
+      https-proxy:
+        required: false
+        type: string
+      no-proxy:
+        required: false
+        type: string
 
 jobs:
   terraform:
@@ -36,6 +49,26 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ inputs.terraform-version }}
+
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        # a tailscale oauth client requires tags
+        if: inputs.tailscale-tags != ''
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: ${{ inputs.tailscale-tags }}
+
+      - name: Config Proxy Environment Variables
+        if: inputs.https-proxy != ''
+        # intermediate variables to avoid injection attack
+        # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
+        env:
+          HTTPS_PROXY: ${{ inputs.https-proxy }}
+          NO_PROXY: ${{ inputs.no-proxy }}
+        run: |
+          printf "HTTPS_PROXY=%s\n" "$HTTPS_PROXY" >> "$GITHUB_ENV"
+          printf "NO_PROXY=%s\n" "$NO_PROXY" >> "$GITHUB_ENV"
 
       - name: Terraform Format
         id: fmt
