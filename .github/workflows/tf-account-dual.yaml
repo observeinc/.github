@@ -1,0 +1,192 @@
+name: Run terraform on account repo
+on:
+  workflow_call:
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        required: true
+      AWS_REGION:
+        required: true
+      TF_BACKEND_S3_BUCKET:
+        required: true
+      TF_BACKEND_S3_KEY:
+        required: true
+      TF_BACKEND_S3_REGION:
+        required: true
+      TS_OAUTH_CLIENT_ID:
+        required: false
+      TS_OAUTH_SECRET:
+        required: false
+    inputs:
+      terraform-version:
+        description: 'Terraform version'
+        required: false
+        type: string
+        default: '1.5.4'
+      tailscale-tags:
+        required: false
+        type: string
+      https-proxy:
+        required: false
+        type: string
+      no-proxy:
+        required: false
+        type: string
+      additional_customers:
+        required: false
+        type: string 
+        description: Additional customers to apply TF-Account Config to 
+
+jobs:
+  terraform:
+    name: 'Run terraform'
+    runs-on: ubuntu-latest
+    # Needed to interact with Github's OIDC token
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: [default, "${{ inputs.additional_customers }}"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ inputs.terraform-version }}
+
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        # a tailscale oauth client requires tags
+        if: inputs.tailscale-tags != ''
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: ${{ inputs.tailscale-tags }}
+
+      - name: Config Proxy Environment Variables
+        if: inputs.https-proxy != ''
+        # intermediate variables to avoid injection attack
+        # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
+        env:
+          HTTPS_PROXY: ${{ inputs.https-proxy }}
+          NO_PROXY: ${{ inputs.no-proxy }}
+        run: |
+          printf "HTTPS_PROXY=%s\n" "$HTTPS_PROXY" >> "$GITHUB_ENV"
+          printf "NO_PROXY=%s\n" "$NO_PROXY" >> "$GITHUB_ENV"
+
+      - name: Print Environmental Variables 
+        run: |    
+          echo "Inputs.additional customers are: ${{ inputs.additional_customers }}"      
+          echo "matrix.workspace is: ${{ matrix.workspace }}"  
+          echo "Repo name is: " ${{ github.event.repository.name }}
+              
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: ${{ github.sha }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init -no-color \
+            -backend-config="bucket=${{ secrets.TF_BACKEND_S3_BUCKET }}" \
+            -backend-config="key=${{ secrets.TF_BACKEND_S3_KEY }}" \
+            -backend-config="region=${{ secrets.TF_BACKEND_S3_REGION }}" \
+            -backend-config="workspace_key_prefix=${{ github.event.repository.name }}" 
+            
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+      
+      - name: Terraform Workspace Configure 
+        id: workspaces 
+        run: |
+          # Check if the Terraform workspace exists, otherwise create it 
+          if ! terraform workspace select "${{matrix.workspace}}" &>/dev/null; then
+              echo "Workspace '${{matrix.workspace}}' does not exist. Creating..."
+              terraform workspace new "${{matrix.workspace}}"
+          else
+              echo "Workspace '${{matrix.workspace}}' already exists. Selecting workspace"
+              terraform workspace select "${{matrix.workspace}}"
+          fi         
+
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'pull_request'
+        run: |
+          path='plan'
+          txt_path='plan.txt'
+
+          terraform plan -no-color -out="$path"
+          terraform show -no-color "$path" > "$txt_path"
+          echo "path=${txt_path}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+      
+      - uses: actions/upload-artifact@v3
+        if: steps.plan.outcome == 'success'
+        with:
+          name: plan
+          path: ${{ steps.plan.outputs.path }}
+
+      - name: Add Plan to Job Summary
+        if: steps.plan.outcome == 'success'
+        run: |
+          {
+            echo '# Terraform Plan'
+            echo '```'
+            cat "${{ steps.plan.outputs.path }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create Pull Request Comment
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs')
+            const MAX_PLAN_LENGTH = 60000 // Max comment length is 65536
+            const plan = '```\n' + fs.readFileSync('${{ steps.plan.outputs.path }}', 'utf8') + '\n```'
+
+            const workflowSummaryURL = '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+
+            const output = `#### Workspace \`${{ matrix.workspace }}\`
+            #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+            <details><summary>Show <a href="${workflowSummaryURL}">Plan</a></summary>
+
+            ${plan.length <= MAX_PLAN_LENGTH ? plan : `_The plan is too large to include in a comment, open the [workflow summary](${workflowSummaryURL}) to view it._`}
+            </details>
+
+            **Pusher**: @${{ github.actor }}, **Action**: \`${{ github.event_name }}\``;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            })
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        #if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: terraform apply -auto-approve
+
+
+
+#  -backend-config="workspace_key_prefix=${{ github.repository}}" \
+#-backend-config="workspace_key_prefix=${{ github.repository}}" \
