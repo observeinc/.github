@@ -30,7 +30,7 @@ jobs:
           skip-version-file: 'true'
           release-count: ${{ inputs.release-count }}
           git-push: ${{ inputs.push }}
-          skip-tag: true #For testing only, skip tagging to prevent error 
+          skip-tag: 'true' #For testing only, skip tagging to prevent error 
       - name: Create Release
         uses: actions/create-release@v1
         if: ${{ inputs.push && steps.changelog.outputs.skipped == 'false' }}
