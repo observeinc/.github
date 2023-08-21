@@ -42,7 +42,7 @@ jobs:
         with:
           application_id: ${{ secrets.APPLICATION_ID }}
           application_private_key: ${{ secrets.APPLICATION_PRIVATE_KEY }}
-          permissions: "actions:write"
+          #permissions: "actions:write"
       - name: Conventional Changelog Action
         id: changelog
         uses: TriPSs/conventional-changelog-action@v3
