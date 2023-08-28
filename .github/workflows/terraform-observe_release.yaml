@@ -30,7 +30,7 @@ jobs:
           echo "::error::release job must be run from the default_branch (${{ github.event.repository.default_branch }}). Found ${{ github.ref_name }}."
           exit 1
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v3
         with:
           role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
           aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
