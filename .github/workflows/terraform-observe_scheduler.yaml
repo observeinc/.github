@@ -46,7 +46,7 @@ jobs:
       matrix:
         directory: ${{ fromJson(needs.get-test-directories.outputs.directories) }}
     steps:
-      - uses: hashicorp/setup-terraform@v2
+      - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ inputs.terraform-version }}
       - uses: actions/checkout@v4
