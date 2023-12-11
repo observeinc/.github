@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
       - name: Build matrix
         id: matrix
         run: |
@@ -55,7 +55,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
       - name: Terraform min/max versions
         id: minMax
         uses: clowdhaus/terraform-min-max@v1.2.6
@@ -111,7 +111,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
       - name: Install Terraform v${{ matrix.version }}
         uses: hashicorp/setup-terraform@v2
         with:
