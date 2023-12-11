@@ -23,7 +23,7 @@ jobs:
           aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - uses: actions/checkout@v4
       
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
       
       - run: pip install pre-commit
         shell: bash
