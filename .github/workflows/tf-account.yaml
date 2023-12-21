@@ -16,6 +16,8 @@ on:
         required: false
       TS_OAUTH_SECRET:
         required: false
+      TWINGATE_SERVICE_KEY:
+        required: false
     inputs:
       terraform-version:
         description: 'Terraform version'
