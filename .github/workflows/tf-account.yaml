@@ -12,10 +12,6 @@ on:
         required: true
       TF_BACKEND_S3_REGION:
         required: true
-      TS_OAUTH_CLIENT_ID:
-        required: false
-      TS_OAUTH_SECRET:
-        required: false
       TWINGATE_SERVICE_KEY:
         required: false
     inputs:
@@ -24,9 +20,6 @@ on:
         required: false
         type: string
         default: '1.6.5'
-      tailscale-tags:
-        required: false
-        type: string
       twingate-enabled:
         required: false
         type: boolean
@@ -55,15 +48,6 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ inputs.terraform-version }}
-
-      - name: Tailscale
-        uses: tailscale/github-action@v2
-        # a tailscale oauth client requires tags
-        if: inputs.tailscale-tags != ''
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: ${{ inputs.tailscale-tags }}
 
       - name: Twingate
         uses: twingate/github-action@v1
