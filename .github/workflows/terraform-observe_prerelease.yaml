@@ -67,7 +67,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_PRERELEASE_SLACK_URL }}
         if: ${{ env.SLACK_WEBHOOK_URL != '' }}
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
             {
