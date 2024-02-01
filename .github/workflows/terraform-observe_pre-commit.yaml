@@ -6,7 +6,7 @@ on:
       tflint-version:
         required: false
         type: string
-        default: v0.35.0
+        default: v0.45.0
         
     secrets:
       TERRAFORM_MODULES_ROLE_ARN:
@@ -21,9 +21,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
       - name: Build matrix
         id: matrix
         run: |
@@ -47,16 +47,16 @@ jobs:
       OBSERVE_CUSTOMER: 0
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
       - name: Terraform min/max versions
         id: minMax
         uses: clowdhaus/terraform-min-max@v1.2.6
         with:
           directory: ${{ matrix.directory }}
       - name: Install Terraform v${{ steps.minMax.outputs.minVersion }}
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ steps.minMax.outputs.minVersion }}
       - name: Install pre-commit dependencies
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Terraform min/max versions
         id: minMax
         uses: clowdhaus/terraform-min-max@v1.2.6
@@ -97,18 +97,18 @@ jobs:
           - ${{ needs.getBaseVersion.outputs.maxVersion }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
       - name: Install Terraform v${{ matrix.version }}
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ matrix.version }}
       - name: Install pre-commit dependencies
         run: |
           pip install pre-commit
           curl -Lo ./terraform-docs.tar.gz https://github.com/terraform-docs/terraform-docs/releases/download/v0.16.0/terraform-docs-v0.16.0-$(uname)-amd64.tar.gz && tar -xzf terraform-docs.tar.gz terraform-docs && chmod +x terraform-docs && sudo mv terraform-docs /usr/bin/
-      - uses: terraform-linters/setup-tflint@v3
+      - uses: terraform-linters/setup-tflint@v4
         name: Setup TFLint
         with:
           tflint_version: ${{ inputs.tflint-version }}

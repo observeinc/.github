@@ -26,7 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build matrix
         id: matrix
         shell: bash
@@ -46,10 +46,10 @@ jobs:
       matrix:
         directory: ${{ fromJson(needs.get-test-directories.outputs.directories) }}
     steps:
-      - uses: hashicorp/setup-terraform@v2
+      - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ inputs.terraform-version }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: make test
         run: make test "${{ matrix.directory }}"
         env:
@@ -69,15 +69,15 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Check manifest.yaml exists
         id: check_manifest
-        uses: andstor/file-existence-action@v2
+        uses: andstor/file-existence-action@v3
         with:
           files: "manifest.yaml"
       - name: Get App Icon URL
         id: get_icon_url
-        uses: mikefarah/yq@v4.32.2
+        uses: mikefarah/yq@v4.40.5
         if: steps.check_manifest.outputs.files_exists == 'true'
         with:
           cmd: yq 'with_entries(.key |= downcase).iconurl' manifest.yaml

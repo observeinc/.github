@@ -24,16 +24,21 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - name: Check branch
+        if: github.ref_type != 'branch' || github.ref_name != github.event.repository.default_branch
+        run: |
+          echo "::error::release job must be run from the default_branch (${{ github.event.repository.default_branch }}). Found ${{ github.ref_name }}."
+          exit 1
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
           aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Conventional Changelog Action
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v3
+        uses: TriPSs/conventional-changelog-action@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           skip-version-file: 'true'
@@ -63,7 +68,7 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_RELEASE_SLACK_URL }}
         if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
-        uses: slackapi/slack-github-action@v1.24.0
+        uses: slackapi/slack-github-action@v1.25.0
         with:
           payload: |
             {
