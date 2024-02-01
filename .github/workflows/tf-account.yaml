@@ -101,7 +101,7 @@ jobs:
           echo "path=${txt_path}" >> $GITHUB_OUTPUT
         continue-on-error: true
       
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: steps.plan.outcome == 'success'
         with:
           name: plan
