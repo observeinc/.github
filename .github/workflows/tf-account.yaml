@@ -19,7 +19,7 @@ on:
         description: 'Terraform version'
         required: false
         type: string
-        default: '1.6.5'
+        default: '1.7.3'
       twingate-enabled:
         required: false
         type: boolean
