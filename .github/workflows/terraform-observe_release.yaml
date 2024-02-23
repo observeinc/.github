@@ -14,6 +14,11 @@ on:
         type: string
         description: Number of releases to preserve in changelog. Default is 0 (regenerates all).
         default: '0'
+      repo-name-slack:
+        required: false
+        type: string
+        description: Override for renamed repositories
+        default: ''
 
 jobs:
   bump:
@@ -63,7 +68,11 @@ jobs:
         if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
         run: |
           echo version=$(echo "${{ steps.changelog.outputs.tag }}" | sed 's/^v//' ) >> $GITHUB_ENV
-          echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
+          if ${{ inputs.repo-name-slack != '' }}; then  
+          echo name=$(echo "${{ inputs.repo-name-slack }}" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
+          else
+            echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
+          fi
       - name: Notify Slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_RELEASE_SLACK_URL }}
