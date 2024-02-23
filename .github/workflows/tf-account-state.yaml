@@ -1,0 +1,94 @@
+name: Run terraform state list command on account repo
+on:
+  workflow_call:
+    secrets:
+      AWS_ROLE_TO_ASSUME:
+        required: true
+      AWS_REGION:
+        required: true
+      TF_BACKEND_S3_BUCKET:
+        required: true
+      TF_BACKEND_S3_KEY:
+        required: true
+      TF_BACKEND_S3_REGION:
+        required: true
+      TWINGATE_SERVICE_KEY:
+        required: false
+    inputs:
+      terraform-version:
+        description: 'Terraform version'
+        required: false
+        type: string
+        default: '1.6.5'
+      twingate-enabled:
+        required: false
+        type: boolean
+        default: false
+      https-proxy:
+        required: false
+        type: string
+      no-proxy:
+        required: false
+        type: string
+
+jobs:
+  terraform:
+    name: 'Run terraform'
+    runs-on: ubuntu-latest
+    # Needed to interact with Github's OIDC token
+    permissions:
+      id-token: write
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform-version }}
+
+      - name: Twingate
+        uses: twingate/github-action@v1
+        if: inputs.twingate-enabled
+        with:
+          service-key: ${{ secrets.TWINGATE_SERVICE_KEY }}
+
+      - name: Config Proxy Environment Variables
+        if: inputs.https-proxy != ''
+        # intermediate variables to avoid injection attack
+        # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
+        env:
+          HTTPS_PROXY: ${{ inputs.https-proxy }}
+          NO_PROXY: ${{ inputs.no-proxy }}
+        run: |
+          printf "HTTPS_PROXY=%s\n" "$HTTPS_PROXY" >> "$GITHUB_ENV"
+          printf "NO_PROXY=%s\n" "$NO_PROXY" >> "$GITHUB_ENV"
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -check
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: ${{ github.sha }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        id: init
+        run: |
+          terraform init -no-color \
+            -backend-config="bucket=${{ secrets.TF_BACKEND_S3_BUCKET }}" \
+            -backend-config="key=${{ secrets.TF_BACKEND_S3_KEY }}" \
+            -backend-config="region=${{ secrets.TF_BACKEND_S3_REGION }}"
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform state list
+        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        run: terraform state list
