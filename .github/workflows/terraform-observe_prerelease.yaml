@@ -67,8 +67,8 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_PRERELEASE_SLACK_URL }}
         if: ${{ env.SLACK_WEBHOOK_URL != '' }}
         run: |
-          if ${{ github.event.inputs.repo-name-slack != '' }}; then  
-            echo name=$(echo "${{ github.event.inputs.repo-name-slack}}" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
+          if ${{ inputs.repo-name-slack != '' }}; then  
+            echo name=$(echo "${{ inputs.repo-name-slack}}" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
           else
             echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
           fi
