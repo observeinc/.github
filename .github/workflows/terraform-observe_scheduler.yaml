@@ -50,6 +50,10 @@ jobs:
         with:
           terraform_version: ${{ inputs.terraform-version }}
       - uses: actions/checkout@v4
+      - name: Create trace parent
+        run: |
+          echo "TRACEPARENT=$(hexdump -vn16 -e'4/4 \"%08X\" 1 \"\n\"' /dev/urandom)" >> $GITHUB_ENV
+           echo "SPANID=$(hexdump -vn8 -e'2/4 \"%08X\" 1 \"\n\"' /dev/urandom" >> $GITHUB_ENV
       - name: make test
         run: make test "${{ matrix.directory }}"
         env:
