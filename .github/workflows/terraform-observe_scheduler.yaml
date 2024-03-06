@@ -53,7 +53,7 @@ jobs:
       - name: Create trace parent
         run: |
           echo "TRACEID=$(hexdump -vn16 -e'4/4 "%08X" 1 "\n"' /dev/urandom)" >> $GITHUB_ENV
-           echo "SPANID=$(hexdump -vn8 -e'2/4 "%08X" 1 "\n"' /dev/urandom" >> $GITHUB_ENV
+          echo "SPANID=$(hexdump -vn8 -e'2/4 "%08X" 1 "\n"' /dev/urandom)" >> $GITHUB_ENV
       - name: make test
         run: make test "${{ matrix.directory }}"
         env:
@@ -65,7 +65,7 @@ jobs:
           GITHUB_WORKSPACE: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TRACEPARENT: '{"TraceID":"${{ env.TRACEID }}", "SpanID": "${{env.SPANID }}"}'
+          TRACEPARENT: '{"TraceID":"${{ env.TRACEID }}", "SpanID": "${{ env.SPANID }}"}'
 
   # Validate App Icon URL is internal
   validate-app-icon:
