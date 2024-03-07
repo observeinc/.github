@@ -50,6 +50,10 @@ jobs:
         with:
           terraform_version: ${{ inputs.terraform-version }}
       - uses: actions/checkout@v4
+      - name: Create trace parent
+        run: |
+          echo "TRACEID=$(hexdump -vn16 -e'4/4 "%08X" 1 "\n"' /dev/urandom)" >> $GITHUB_ENV
+          echo "SPANID=$(hexdump -vn8 -e'2/4 "%08X" 1 "\n"' /dev/urandom)" >> $GITHUB_ENV
       - name: make test
         run: make test "${{ matrix.directory }}"
         env:
@@ -61,6 +65,7 @@ jobs:
           GITHUB_WORKSPACE: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TRACEPARENT: 00-${{ env.TRACEID }}-${{ env.SPANID }}-01
 
   # Validate App Icon URL is internal
   validate-app-icon:
