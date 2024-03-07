@@ -65,7 +65,7 @@ jobs:
           GITHUB_WORKSPACE: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TRACEPARENT: '"00-${{ env.TRACEID }}-${{ env.SPANID }}-01"'
+          TRACEPARENT: 00-${{ env.TRACEID }}-${{ env.SPANID }}-01
 
   # Validate App Icon URL is internal
   validate-app-icon:
