@@ -43,6 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 2
       matrix:
         directory: ${{ fromJson(needs.get-test-directories.outputs.directories) }}
     steps:
