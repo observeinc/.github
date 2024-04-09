@@ -77,6 +77,20 @@ jobs:
           role-session-name: ${{ github.sha }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Synchronize secrets
+        env:
+          SECRETS: ${{ toJSON(secrets) }}
+        shell: bash
+        run: |
+          LOCAL=`echo "$SECRETS" | jq 'with_entries(select(.key | startswith("X_")))'`
+          REMOTE=`aws secretsmanager get-secret-value --secret-id ${{ github.event.repository.name }} | jq -r .SecretString`
+          FILTERED=`echo ${REMOTE} | jq 'with_entries(select(.key | startswith("X_") | not))'`
+          MERGED=`echo ${LOCAL} ${REMOTE} | jq -s add`
+          if [[ "$MERGED" != "$REMOTE" ]]
+          then
+            aws secretsmanager put-secret-value --secret-id ${{ github.event.repository.name }} --secret-string="$MERGED"
+          fi
+
       - name: Terraform Init
         id: init
         run: |
