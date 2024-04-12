@@ -1,5 +1,7 @@
 import os
 import glob
+import logging
+from decouple import config
 
 # TO TEST THIS LOCALLY
 # export GITHUB_OUTPUT=testyone
@@ -10,13 +12,42 @@ import glob
 # should output testyone file with value like:
 # directories_with_customerID=["/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/default_XXXXXX_123578675166", "/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/gcp_XXXXXX_128872978242", "/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/min_provider_XXXXXX_123578675166", "/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/aws_XXXXXX_128872978242", "/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/all_options_XXXXXX_123578675166"]
 
+PYTHON_LOG_LEVEL = config("PYTHON_LOG_LEVEL", default="DEBUG")
+
+logging.basicConfig(
+    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S %z",
+    level=PYTHON_LOG_LEVEL,
+)
+
+
+def fast_scandir(dirname):
+    subfolders = [f.path for f in os.scandir(dirname) if f.is_dir()]
+    for dirname in list(subfolders):
+        if "tftests" not in dirname:
+            subfolders.extend(fast_scandir(dirname))
+
+    tftests_dirs = []
+    for dirname in list(subfolders):
+        if "tftests" in dirname and ".terraform" not in dirname:
+            tftests_dirs.append(dirname)
+
+    return tftests_dirs
+
 
 def list_subdirectories(parent_dir, pattern):
     """Returns a list of subdirectories under parent_dir using pattern"""
+    logging.debug(f"parent_dir={parent_dir}")
+    logging.debug(f"pattern={pattern}")
+
+    subfolders = fast_scandir(parent_dir)
+    print("subfolders")
+    print(subfolders)
+
     # Create the glob pattern to match subdirectories
     glob_pattern = os.path.join(parent_dir, pattern)
     # Use glob to find subdirectories matching the pattern
-    subdirectories = glob.glob(glob_pattern)
+    subdirectories = glob.glob(glob_pattern, recursive=True)
     # Filter out files from the list
     subdirectories = [
         directory for directory in subdirectories if os.path.isdir(directory)
