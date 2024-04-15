@@ -1,7 +1,6 @@
 import os
 import glob
 import logging
-from decouple import config
 
 # TO TEST THIS LOCALLY
 # export GITHUB_OUTPUT=testyone
@@ -12,7 +11,7 @@ from decouple import config
 # should output testyone file with value like:
 # directories_with_customerID=["/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/default_XXXXXX_123578675166", "/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/gcp_XXXXXX_128872978242", "/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/min_provider_XXXXXX_123578675166", "/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/aws_XXXXXX_128872978242", "/Users/arthur/content_eng/k8s/terraform-observe-kubernetes/tftests/all_options_XXXXXX_123578675166"]
 
-PYTHON_LOG_LEVEL = config("PYTHON_LOG_LEVEL", default="DEBUG")
+PYTHON_LOG_LEVEL = os.getenv("PYTHON_LOG_LEVEL", default="DEBUG")
 
 logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s %(message)s",
