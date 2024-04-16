@@ -43,10 +43,14 @@ def list_subdirectories(parent_dir, pattern):
     print("subfolders")
     print(subfolders)
 
+    glob_dirs = []
+    subdirectories = []
     # Create the glob pattern to match subdirectories
-    glob_pattern = os.path.join(parent_dir, pattern)
+    for subfolder in subfolders:
+        glob_dirs.append(os.path.join(subfolder, pattern))
     # Use glob to find subdirectories matching the pattern
-    subdirectories = glob.glob(glob_pattern, recursive=True)
+    for dir in glob_dirs:
+        subdirectories = subdirectories + glob.glob(dir, recursive=True)
     # Filter out files from the list
     subdirectories = [
         directory for directory in subdirectories if os.path.isdir(directory)
@@ -111,7 +115,7 @@ if __name__ == "__main__":
 
     # Example usage:
     parent_directory = os.getenv("TEST_DIRECTORY") or os.getcwd()
-    pattern = "tftests/*"  # Match all directories
+    pattern = "*"  # Match all directories
 
     subdirectories = list_subdirectories(parent_directory, pattern)
     envs_list, envs_list_range = pick_my_env(ENVS, subdirectories)
