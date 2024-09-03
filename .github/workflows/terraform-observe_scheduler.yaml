@@ -12,6 +12,11 @@ on:
         required: false
         type: string
         default: "latest"
+      script_branch:
+        description: "Branch of python script"
+        required: false
+        type: string
+        default: "main"
 
 jobs:
   commit-validation:
@@ -27,33 +32,57 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Build matrix
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: download python script
         id: matrix
-        shell: bash
         run: |
-          DIRS="$(find . -path "*tftests/*" ! -path "*.terraform*" -type d )"
-          [[ ${#DIRS} > 0 ]] && echo "directories=[\"${DIRS//$'\n'/\",\"}\"]" >> "$GITHUB_OUTPUT" || echo "directories=[]" >> "$GITHUB_OUTPUT"
+          curl -O https://raw.githubusercontent.com/observeinc/.github/${{ inputs.script_branch }}/.github/scripts/main.py
+          # script creates output directories_with_customerID
+          python3 main.py
+        env:
+          TERRAFORM_MODULES_TEST_OBSERVE_CUSTOMER_LIST: ${{ vars.TERRAFORM_MODULES_TEST_OBSERVE_CUSTOMER_LIST }}
+
     outputs:
-      directories: ${{ steps.matrix.outputs.directories }}
+      directories_with_customerID: ${{ steps.matrix.outputs.directories_with_customerID }}
 
   terraform-test-apply:
     needs: get-test-directories
-    if: ${{ needs.get-test-directories.outputs.directories != '[]' && needs.get-test-directories.outputs.directories != '' }}
+    if: ${{ needs.get-test-directories.outputs.directories_with_customerID != '' }}
     name: Test Terraform Module
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      max-parallel: 4
       matrix:
-        directory: ${{ fromJson(needs.get-test-directories.outputs.directories) }}
+        directories_with_customerID: ${{ fromJson(needs.get-test-directories.outputs.directories_with_customerID) }}
     steps:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ inputs.terraform-version }}
       - uses: actions/checkout@v4
+
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: split ${{ matrix.directories_with_customerID }}
+        id: matrix
+        run: |
+          curl -O https://raw.githubusercontent.com/observeinc/.github/${{ inputs.script_branch }}/.github/scripts/main.py
+       
+          python3 -c 'from main import split_string_into_dir_and_customer; split_string_into_dir_and_customer("${{ matrix.directories_with_customerID }}");'
+      
       - name: make test
-        run: make test "${{ matrix.directory }}"
+        run: |
+          make test "${{ env.TEST_DIR }}"
+
         env:
-          OBSERVE_CUSTOMER: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_CUSTOMER }}
+          OBSERVE_CUSTOMER: ${{ env.CUST_NUMBER }}
           OBSERVE_DOMAIN: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_DOMAIN }}
           OBSERVE_USER_EMAIL: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_EMAIL }}
           OBSERVE_USER_PASSWORD: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_PASSWORD }}
@@ -77,7 +106,7 @@ jobs:
           files: "manifest.yaml"
       - name: Get App Icon URL
         id: get_icon_url
-        uses: mikefarah/yq@v4.40.5
+        uses: mikefarah/yq@v4.44.2
         if: steps.check_manifest.outputs.files_exists == 'true'
         with:
           cmd: yq 'with_entries(.key |= downcase).iconurl' manifest.yaml
