@@ -102,3 +102,7 @@ typings/
 
 # TernJS port file
 .tern-port
+
+# Test generated file
+testy*
+/.github/scripts/__pycache__

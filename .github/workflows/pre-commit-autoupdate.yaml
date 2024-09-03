@@ -17,13 +17,13 @@ jobs:
       pull-requests: write
     steps:
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
           aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
       
       - run: pip install pre-commit
         shell: bash
@@ -36,7 +36,7 @@ jobs:
         shell: bash
       - run: pre-commit run --all-files
         shell: bash
-      - uses: peter-evans/create-pull-request@v4
+      - uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: update/pre-commit-hooks

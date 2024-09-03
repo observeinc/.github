@@ -12,12 +12,24 @@ on:
         required: true
       TF_BACKEND_S3_REGION:
         required: true
+      TWINGATE_SERVICE_KEY:
+        required: false
     inputs:
       terraform-version:
         description: 'Terraform version'
         required: false
         type: string
-        default: '1.2.4'
+        default: '1.6.5'
+      twingate-enabled:
+        required: false
+        type: boolean
+        default: false
+      https-proxy:
+        required: false
+        type: string
+      no-proxy:
+        required: false
+        type: string
 
 jobs:
   terraform:
@@ -30,23 +42,54 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ inputs.terraform-version }}
+
+      - name: Twingate
+        uses: twingate/github-action@v1
+        if: inputs.twingate-enabled
+        with:
+          service-key: ${{ secrets.TWINGATE_SERVICE_KEY }}
+
+      - name: Config Proxy Environment Variables
+        if: inputs.https-proxy != ''
+        # intermediate variables to avoid injection attack
+        # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#using-an-intermediate-environment-variable
+        env:
+          HTTPS_PROXY: ${{ inputs.https-proxy }}
+          NO_PROXY: ${{ inputs.no-proxy }}
+        run: |
+          printf "HTTPS_PROXY=%s\n" "$HTTPS_PROXY" >> "$GITHUB_ENV"
+          printf "NO_PROXY=%s\n" "$NO_PROXY" >> "$GITHUB_ENV"
 
       - name: Terraform Format
         id: fmt
         run: terraform fmt -check
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           role-session-name: ${{ github.sha }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Synchronize secrets
+        env:
+          SECRETS: ${{ toJSON(secrets) }}
+        shell: bash
+        run: |
+          LOCAL=`echo "$SECRETS" | jq 'with_entries(select(.key | startswith("X_")))'`
+          REMOTE=`aws secretsmanager get-secret-value --secret-id ${{ github.event.repository.name }} | jq -r .SecretString`
+          FILTERED=`echo ${REMOTE} | jq 'with_entries(select(.key | startswith("X_") | not))'`
+          MERGED=`echo ${LOCAL} ${REMOTE} | jq -s add`
+          if [[ "$MERGED" != "$REMOTE" ]]
+          then
+            aws secretsmanager put-secret-value --secret-id ${{ github.event.repository.name }} --secret-string="$MERGED"
+          fi
 
       - name: Terraform Init
         id: init
@@ -72,7 +115,7 @@ jobs:
           echo "path=${txt_path}" >> $GITHUB_OUTPUT
         continue-on-error: true
       
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: steps.plan.outcome == 'success'
         with:
           name: plan
@@ -89,7 +132,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create Pull Request Comment
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         if: github.event_name == 'pull_request'
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

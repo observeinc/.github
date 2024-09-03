@@ -14,6 +14,11 @@ on:
         type: string
         description: Number of releases to preserve in changelog. Default is 0 (regenerates all).
         default: '0'
+      repo-name-slack:
+        required: false
+        type: string
+        description: Override for renamed repositories
+        default: ''
 
 jobs:
   bump:
@@ -24,16 +29,21 @@ jobs:
       contents: write
       pull-requests: write
     steps:
+      - name: Check branch
+        if: github.ref_type != 'branch' || github.ref_name != github.event.repository.default_branch
+        run: |
+          echo "::error::release job must be run from the default_branch (${{ github.event.repository.default_branch }}). Found ${{ github.ref_name }}."
+          exit 1
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.TERRAFORM_MODULES_ROLE_ARN }}
           aws-region: ${{ secrets.TERRAFORM_MODULES_REGION }}
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Conventional Changelog Action
         id: changelog
-        uses: TriPSs/conventional-changelog-action@v3
+        uses: TriPSs/conventional-changelog-action@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           skip-version-file: 'true'
@@ -58,12 +68,16 @@ jobs:
         if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
         run: |
           echo version=$(echo "${{ steps.changelog.outputs.tag }}" | sed 's/^v//' ) >> $GITHUB_ENV
-          echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
+          if ${{ inputs.repo-name-slack != '' }}; then  
+          echo name=$(echo "${{ inputs.repo-name-slack }}" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
+          else
+            echo name=$(echo "$GITHUB_REPOSITORY" | sed 's/^.*terraform-observe-//') >> $GITHUB_ENV
+          fi
       - name: Notify Slack
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_RELEASE_SLACK_URL }}
         if: ${{ env.SLACK_WEBHOOK_URL != '' && steps.changelog.outputs.skipped == 'false' }}
-        uses: slackapi/slack-github-action@v1.23.0
+        uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
             {

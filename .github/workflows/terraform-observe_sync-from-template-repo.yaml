@@ -63,7 +63,7 @@ jobs:
           echo "BASE_BRANCH=${{ env.BASE_BRANCH }}" >> $GITHUB_ENV
       # Clone the template repository
       - name: Check out template repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ inputs.REPO_TEMPLATE }}
           ssh-key: ${{ secrets.EXAMPLE_REPO_SSH_KEY }}
@@ -71,7 +71,7 @@ jobs:
 
       # Clone the target repository. Check out a branch
       - name: Check out ${{ github.repository }}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: ${{ github.repository }}
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -100,6 +100,7 @@ jobs:
             find ${{ env.REPO_TEMPLATE }} \( \
             -name "Makefile" -o \
             -name ".pre-commit-config.yaml" -o \
+            -name ".tflint.hcl" -o \
             -name "LICENSE" \) \
             -type f \
             -print)"

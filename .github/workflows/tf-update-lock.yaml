@@ -21,10 +21,10 @@ jobs:
     steps:
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ inputs.terraform-version }}
 
@@ -60,7 +60,7 @@ jobs:
 
       - name: Create Pull Request
         id: create_pr
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         if: steps.commit-lockfile.outcome == 'success'
         with:
           script: |
