@@ -78,15 +78,16 @@ jobs:
           python3 -c 'from main import split_string_into_dir_and_customer; split_string_into_dir_and_customer("${{ matrix.directories_with_customerID }}");'
       
       - name: make test
-        run: |
-          make test "${{ env.TEST_DIR }}"
-
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          command: make test "${{ env.TEST_DIR }}"
         env:
           OBSERVE_CUSTOMER: ${{ env.CUST_NUMBER }}
           OBSERVE_DOMAIN: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_DOMAIN }}
           OBSERVE_USER_EMAIL: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_EMAIL }}
           OBSERVE_USER_PASSWORD: ${{ secrets.TERRAFORM_MODULES_TEST_OBSERVE_USER_PASSWORD }}
-
           GITHUB_WORKSPACE: ${{ github.workspace }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
