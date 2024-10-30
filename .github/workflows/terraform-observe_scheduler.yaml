@@ -81,6 +81,7 @@ jobs:
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 10
+          retry_wait_seconds: 60 # Wait 60seconds before retring
           max_attempts: 3
           command: make test "${{ env.TEST_DIR }}"
         env:
