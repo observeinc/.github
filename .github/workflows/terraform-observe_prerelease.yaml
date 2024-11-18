@@ -76,8 +76,10 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.TERRAFORM_MODULES_PRERELEASE_SLACK_URL }}
         if: ${{ env.SLACK_WEBHOOK_URL != '' }}
-        uses: slackapi/slack-github-action@v1.27.0
+        uses: slackapi/slack-github-action@v2.0.0
         with:
+          webhook: ${{env.SLACK_WEBHOOK_URL}}
+          webhook-type: webhook-trigger
           payload: |
             {
               "namespace": "observeinc",
