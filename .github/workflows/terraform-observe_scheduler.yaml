@@ -20,6 +20,7 @@ on:
 
 jobs:
   commit-validation:
+    if: github.event_name == 'pull_request'
     uses: ./.github/workflows/shared_commit-validation.yaml
     secrets: inherit
     with:
