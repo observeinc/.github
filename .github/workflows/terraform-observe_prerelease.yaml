@@ -59,7 +59,13 @@ jobs:
           release-count: ${{ inputs.release-count }}
       - name: Prepare prerelease version (post-changelog)
         run: |
+          echo "Last release ref: ${last_release_ref}"
+          echo "Commits since last tag: ${commits_since_last_tag}"
+          echo "Alpha/beta: ${alphabeta}"
+          version_prefix=$(git describe --tags | sed 's/^v//')
+          echo "Version prefix: ${version_prefix}"
           echo version=$(git describe --tags | sed 's/^v//')-${commits_since_last_tag}.${alphabeta}+g$(git rev-parse --short HEAD~1) >> $GITHUB_ENV
+          echo "Version: ${version}"
       - name: Mirror in S3
         run: make s3 TAG="v${version}"
       - name: Prepare Slack notification
